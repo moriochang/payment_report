@@ -27,23 +27,23 @@
         .header {
             background: white;
             border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 30px;
+            padding: 20px;
+            margin-bottom: 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
 
         h1 {
             color: #667eea;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2em;
+            margin-bottom: 8px;
         }
 
         .upload-section {
             background: white;
             border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 30px;
+            padding: 25px;
+            margin-bottom: 25px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
@@ -51,7 +51,7 @@
         .upload-area {
             border: 3px dashed #667eea;
             border-radius: 15px;
-            padding: 50px;
+            padding: 30px;
             cursor: pointer;
             transition: all 0.3s ease;
             background: #f8f9ff;
@@ -69,15 +69,15 @@
         }
 
         .upload-icon {
-            font-size: 4em;
+            font-size: 3em;
             color: #667eea;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .upload-text {
-            font-size: 1.2em;
+            font-size: 1em;
             color: #666;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         input[type="file"] {
@@ -88,12 +88,12 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 30px;
-            font-size: 1.1em;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
         .btn:hover {
@@ -118,6 +118,19 @@
         .store-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .total-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #fff5f5 100%);
+            border: 2px solid #667eea;
+            grid-column: 1 / -1;
+        }
+
+        .total-card .store-name {
+            color: #5a67d8;
+            font-size: 1.7em;
+            border-bottom-color: #5a67d8;
+            border-bottom-width: 3px;
         }
 
         .store-name {
@@ -402,16 +415,54 @@
         function displayResults(results) {
             dashboard.innerHTML = '';
             
+            // 計算總和
+            const totals = {
+                name: '中區',
+                currentPerformance: 0,
+                targetPerformance: 0,
+                grossMarginAmount: 0,
+                grossMarginTarget: 0,
+                performanceRate: 0,
+                performanceDiff: 0,
+                marginRate: 0,
+                marginDiff: 0,
+                grossMarginRate: 0
+            };
+            
             results.forEach(store => {
+                totals.currentPerformance += store.currentPerformance;
+                totals.targetPerformance += store.targetPerformance;
+                totals.grossMarginAmount += store.grossMarginAmount;
+                totals.grossMarginTarget += store.grossMarginTarget;
+            });
+            
+            totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
+            totals.performanceRate = totals.targetPerformance > 0 ? (totals.currentPerformance / totals.targetPerformance) * 100 : 0;
+            totals.marginDiff = totals.grossMarginAmount - totals.grossMarginTarget;
+            totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
+            totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
+            
+            // 先顯示總和卡片
+            createStoreCard(totals, true);
+            
+            // 再顯示各店卡片
+            results.forEach(store => {
+                createStoreCard(store, false);
+            });
+
+            loading.style.display = 'none';
+            dashboard.style.display = 'grid';
+        }
+
+        function createStoreCard(store, isTotal) {
                 const card = document.createElement('div');
-                card.className = 'store-card';
+                card.className = isTotal ? 'store-card total-card' : 'store-card';
                 
                 const performanceClass = store.performanceRate >= 100 ? 'positive' : 'negative';
                 const marginClass = store.marginRate >= 100 ? 'positive' : 'negative';
                 
                 // 建立毛利額達成率的 HTML
                 let marginRateHtml = '';
-                let marginDiffHtml = '';
                 
                 if (store.grossMarginTarget > 0) {
                     marginRateHtml = `
@@ -485,7 +536,7 @@
                     
                     ${store.grossMarginRate > 0 ? `
                         <div class="metric-row">
-                            <div class="metric-label">實際毛利率</div>
+                            <div class="metric-label">整體毛利率</div>
                             <div class="metric-value neutral">
                                 ${store.grossMarginRate.toFixed(2)}%
                             </div>
@@ -494,10 +545,6 @@
                 `;
                 
                 dashboard.appendChild(card);
-            });
-
-            loading.style.display = 'none';
-            dashboard.style.display = 'grid';
         }
 
         function formatNumber(num) {
