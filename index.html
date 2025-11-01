@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>立展業績報表分析</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #eef1ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #e0e7ff;
+            border-color: #764ba2;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .dashboard {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .store-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .store-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .store-name {
+            font-size: 1.5em;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: bold;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            gap: 15px;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 0.95em;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 1.15em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .positive {
+            color: #10b981;
+        }
+
+        .negative {
+            color: #ef4444;
+        }
+
+        .neutral {
+            color: #667eea;
+        }
+
+        .percentage {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .percentage.positive {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .percentage.negative {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .amount {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #dc2626;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .metric-row {
+                grid-template-columns: 120px 1fr;
+                gap: 10px;
+            }
+            
+            .metric-label {
+                font-size: 0.85em;
+            }
+            
+            .metric-value {
+                font-size: 1em;
+            }
+            
+            .percentage {
+                font-size: 0.7em;
+                padding: 2px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 立展業績報表分析系統</h1>
+            <p style="color: #666; font-size: 1.1em; margin-top: 10px;">上傳每日業績報表，即時查看各店表現</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">拖曳Excel檔案到這裡，或點擊下方按鈕選擇檔案</div>
+                <div style="color: #999; margin-top: 10px;">支援格式：.xlsx, .xls</div>
+                <input type="file" id="fileInput" accept=".xlsx,.xls">
+                <button class="btn" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
+            </div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <div style="color: #667eea; font-size: 1.2em;">正在分析資料...</div>
+        </div>
+
+        <div class="dashboard" id="dashboard"></div>
+    </div>
+
+    <script>
+        const storeMapping = {
+            'TC[i]store': { name: '中港', column: 13, marginColumn: 13 },
+            '中友[i]store': { name: '中友', column: 16, marginColumn: 16 },
+            'MOP台中[i]store': { name: '台中三井', column: 65, marginColumn: 66 },
+            '耐斯[i]store': { name: '耐斯', column: 28, marginColumn: 28 },
+            '垂楊[i]store': { name: '垂楊', column: 43, marginColumn: 43 }
+        };
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const dashboard = document.getElementById('dashboard');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 拖放功能
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showError('請上傳有效的Excel檔案（.xlsx 或 .xls）');
+                return;
+            }
+
+            loading.style.display = 'block';
+            dashboard.style.display = 'none';
+            errorMessage.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processData(jsonData);
+                } catch (error) {
+                    showError('檔案讀取失敗：' + error.message);
+                    loading.style.display = 'none';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processData(data) {
+            try {
+                const results = [];
+                
+                // 資料行索引
+                const TOTAL_ROW = 35;  // 合計
+                const TARGET_ROW = 36; // 本月目標
+                const GROSS_MARGIN_TARGET_ROW = 48; // 預估毛利額
+                const GROSS_MARGIN_RATE_ROW = 44;  // 實際毛利率(含銷補)
+                const GROSS_MARGIN_AMOUNT_ROW = 46; // 實際毛利額(含銷補)
+
+                Object.entries(storeMapping).forEach(([key, store]) => {
+                    const col = store.column;
+                    const marginCol = store.marginColumn;
+                    
+                    // 提取數據
+                    const currentPerformance = parseFloat(data[TOTAL_ROW][col]) || 0;
+                    const targetPerformance = parseFloat(data[TARGET_ROW][col]) || 0;
+                    const grossMarginTarget = parseFloat(data[GROSS_MARGIN_TARGET_ROW][marginCol]) || 0;
+                    const grossMarginRate = parseFloat(data[GROSS_MARGIN_RATE_ROW][marginCol]) || 0;
+                    const grossMarginAmount = parseFloat(data[GROSS_MARGIN_AMOUNT_ROW][marginCol]) || 0;
+
+                    // 計算達成率和差異
+                    const performanceRate = targetPerformance > 0 ? (currentPerformance / targetPerformance) * 100 : 0;
+                    const performanceDiff = currentPerformance - targetPerformance;
+                    const marginRate = grossMarginTarget > 0 ? (grossMarginAmount / grossMarginTarget) * 100 : 0;
+                    const marginDiff = grossMarginAmount - grossMarginTarget;
+
+                    results.push({
+                        name: store.name,
+                        currentPerformance,
+                        targetPerformance,
+                        performanceRate,
+                        performanceDiff,
+                        grossMarginAmount,
+                        grossMarginTarget,
+                        marginRate,
+                        marginDiff,
+                        grossMarginRate: grossMarginRate * 100
+                    });
+                });
+
+                displayResults(results);
+            } catch (error) {
+                showError('資料處理失敗：' + error.message);
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResults(results) {
+            dashboard.innerHTML = '';
+            
+            results.forEach(store => {
+                const card = document.createElement('div');
+                card.className = 'store-card';
+                
+                const performanceClass = store.performanceRate >= 100 ? 'positive' : 'negative';
+                const marginClass = store.marginRate >= 100 ? 'positive' : 'negative';
+                
+                // 建立毛利額達成率的 HTML
+                let marginRateHtml = '';
+                let marginDiffHtml = '';
+                
+                if (store.grossMarginTarget > 0) {
+                    marginRateHtml = `
+                        <div class="metric-row">
+                            <div class="metric-label">毛利額達成率</div>
+                            <div class="metric-value ${marginClass}">
+                                ${store.marginRate.toFixed(1)}%
+                                <span class="percentage ${marginClass}">
+                                    ${store.marginRate >= 100 ? '✓ 達標' : '✗ 未達標'}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row">
+                            <div class="metric-label">毛利額目標差異</div>
+                            <div>
+                                <div class="metric-value ${marginClass}">
+                                    ${store.marginDiff >= 0 ? '+' : ''}${formatNumber(store.marginDiff)}
+                                </div>
+                                <div class="amount">目標: ${formatNumber(store.grossMarginTarget)} | 實際: ${formatNumber(store.grossMarginAmount)}</div>
+                            </div>
+                        </div>
+                    `;
+                } else if (store.grossMarginAmount > 0) {
+                    marginRateHtml = `
+                        <div class="metric-row">
+                            <div class="metric-label">實際毛利額</div>
+                            <div>
+                                <div class="metric-value neutral">
+                                    ${formatNumber(store.grossMarginAmount)}
+                                </div>
+                                <div class="amount">（無目標資料）</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    marginRateHtml = `
+                        <div class="metric-row">
+                            <div class="metric-label">毛利額資料</div>
+                            <div class="metric-value" style="color: #999;">
+                                無資料
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="store-name">${store.name}</div>
+                    
+                    <div class="metric-row">
+                        <div class="metric-label">業績達成率</div>
+                        <div class="metric-value ${performanceClass}">
+                            ${store.performanceRate.toFixed(1)}%
+                            <span class="percentage ${performanceClass}">
+                                ${store.performanceRate >= 100 ? '✓ 達標' : '✗ 未達標'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <div class="metric-label">目標業績差異</div>
+                        <div>
+                            <div class="metric-value ${performanceClass}">
+                                ${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}
+                            </div>
+                            <div class="amount">目標: ${formatNumber(store.targetPerformance)} | 目前: ${formatNumber(store.currentPerformance)}</div>
+                        </div>
+                    </div>
+                    
+                    ${marginRateHtml}
+                    
+                    ${store.grossMarginRate > 0 ? `
+                        <div class="metric-row">
+                            <div class="metric-label">實際毛利率</div>
+                            <div class="metric-value neutral">
+                                ${store.grossMarginRate.toFixed(2)}%
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+                
+                dashboard.appendChild(card);
+            });
+
+            loading.style.display = 'none';
+            dashboard.style.display = 'grid';
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('zh-TW', {
+                style: 'decimal',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(num);
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
