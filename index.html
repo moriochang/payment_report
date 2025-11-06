@@ -1,833 +1,138 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>立展業績報表分析</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<style>
+    /* ... 保持原有的通用樣式不變 ... */
 
-        body {
-            font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+    /* 表格樣式優化 */
+    .summary-table-container {
+        /* ... 保持不變 ... */
+        display: none;
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        overflow-x: auto;
+    }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+    .summary-table-title {
+        /* ... 保持不變 ... */
+        font-size: 1.5em;
+        color: #667eea;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: center;
+    }
 
-        .header {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse; /* 邊框合併為單線 */
+        font-size: 0.95em;
+        border: 2px solid #667eea; /* 為整個表格添加一個主邊框 */
+    }
 
-        h1 {
-            color: #667eea;
-            font-size: 2em;
-            margin-bottom: 8px;
-        }
+    /* 表格頭部樣式 */
+    .summary-table th {
+        background: #eef1ff; /* 淺藍色背景，提升專業感 */
+        color: #374151;
+        padding: 12px 8px; /* 增加上下間距 */
+        text-align: center;
+        font-weight: bold; /* 加粗表頭文字 */
+        border: 1px solid #cdd5f3; /* 淺色實線分隔線 */
+        font-size: 0.9em;
+        text-transform: uppercase; /* 將文字轉為大寫，增加儀式感 */
+        letter-spacing: 0.5px;
+    }
+    
+    .summary-table thead tr:first-child th:first-child {
+        border-top-left-radius: 15px; /* 表格容器圓角，但表格本身沒有，所以這行可選 */
+    }
 
-        .upload-section {
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
+    .summary-table thead tr:first-child th:last-child {
+        border-top-right-radius: 15px; /* 表格容器圓角，但表格本身沒有，所以這行可選 */
+    }
 
-        .upload-area {
-            border: 3px dashed #667eea;
-            border-radius: 15px;
-            padding: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: #f8f9ff;
-        }
+    /* 表格單元格樣式 */
+    .summary-table td {
+        padding: 10px 8px; /* 增加單元格間距 */
+        text-align: right;
+        border: 1px solid #e5e7eb; /* 淺色實線分隔線 */
+        vertical-align: middle;
+    }
 
-        .upload-area:hover {
-            background: #eef1ff;
-            border-color: #764ba2;
-        }
+    /* 店家名稱列（第一列） */
+    .summary-table td:first-child {
+        text-align: left;
+        font-weight: 600;
+        color: #5a67d8; /* 使用品牌色系讓店家名稱更突出 */
+        background: #f8f9ff; /* 輕微背景色區分 */
+    }
 
-        .upload-area.dragover {
-            background: #e0e7ff;
-            border-color: #764ba2;
-            transform: scale(1.02);
-        }
+    /* 總計行樣式 */
+    .summary-table .total-row {
+        background: #dce1ff; /* 使用更深的淺藍色區分總計行 */
+        font-weight: bold;
+        border-top: 3px solid #5a67d8; /* 更粗、更顯眼的頂部邊框 */
+    }
 
-        .upload-icon {
-            font-size: 3em;
-            color: #667eea;
-            margin-bottom: 15px;
-        }
+    .summary-table .total-row td {
+        color: #374151;
+        font-size: 1em;
+    }
+    
+    /* 數值顏色樣式 */
+    .summary-table .positive-value {
+        color: #059669; /* 使用更深的綠色 */
+        font-weight: bold; /* 達成率和差異加粗 */
+    }
 
-        .upload-text {
-            font-size: 1em;
-            color: #666;
-            margin-bottom: 10px;
-        }
+    .summary-table .negative-value {
+        color: #dc2626; /* 使用更深的紅色 */
+        font-weight: bold; /* 達成率和差異加粗 */
+    }
 
-        input[type="file"] {
-            display: none;
-        }
+    .summary-table .neutral-value {
+        color: #374151;
+        font-weight: normal; /* 讓目標和實際值不要太搶眼 */
+    }
+    
+    .summary-table tbody tr:hover {
+        background: #f0f3ff; /* hover 顏色用淺藍色系，更搭整體風格 */
+    }
 
-        .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-        }
+    /* ... 保持原有的 @keyframes spin ... */
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
-        }
+    /* 響應式優化（保持不變） */
+    @media (max-width: 768px) {
+        /* ... 保持不變 ... */
 
-        .dashboard {
-            display: none;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 20px;
-        }
-
-        .store-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .store-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
-        }
-
-        .total-card {
-            background: linear-gradient(135deg, #f8f9ff 0%, #fff5f5 100%);
-            border: 2px solid #667eea;
-            grid-column: 1 / -1;
-        }
-
-        .total-card .store-name {
-            color: #5a67d8;
-            font-size: 1.7em;
-            border-bottom-color: #5a67d8;
-            border-bottom-width: 3px;
-        }
-
-        .store-name {
-            font-size: 1.5em;
-            color: #667eea;
-            margin-bottom: 15px;
-            font-weight: bold;
-            border-bottom: 2px solid #667eea;
-            padding-bottom: 10px;
-        }
-
-        .metric-row {
-            display: grid;
-            grid-template-columns: 140px 1fr;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
-            gap: 15px;
-        }
-
-        .metric-row:last-child {
-            border-bottom: none;
-        }
-
-        .metric-label {
-            font-size: 0.95em;
-            color: #555;
-            font-weight: 500;
-        }
-
-        .metric-value {
-            font-size: 1.15em;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .positive {
-            color: #10b981;
-        }
-
-        .negative {
-            color: #ef4444;
-        }
-
-        .neutral {
-            color: #667eea;
-        }
-
-        .percentage {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .percentage.positive {
-            background: #d1fae5;
-            color: #059669;
-        }
-
-        .percentage.negative {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .amount {
-            font-size: 0.8em;
-            color: #666;
-            margin-top: 3px;
-        }
-
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 40px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        /* 表格樣式 */
+        /* 表格手機版樣式 */
         .summary-table-container {
-            display: none;
-            background: white;
-            border-radius: 20px;
-            padding: 25px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
+            padding: 15px;
         }
 
         .summary-table-title {
-            font-size: 1.5em;
-            color: #667eea;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-align: center;
+            font-size: 1.2em;
         }
 
         .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.95em;
+            font-size: 0.8em;
+            border: 1px solid #667eea; /* 手機版邊框稍細 */
         }
 
-        .summary-table th {
-            background: #f3f4f6;
-            color: #374151;
-            padding: 10px 8px;
-            text-align: center;
-            font-weight: 600;
-            border: 1px solid #e5e7eb;
-            font-size: 0.9em;
-        }
-
+        .summary-table th,
         .summary-table td {
-            padding: 8px;
-            text-align: right;
-            border: 1px solid #e5e7eb;
+            padding: 8px 4px;
+        }
+        
+        .summary-table th {
+            padding: 10px 4px;
         }
 
-        .summary-table td:first-child {
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-        }
-
-        .summary-table tbody tr:hover {
-            background: #f9fafb;
-        }
-
-        .summary-table .total-row {
-            background: #f3f4f6;
-            font-weight: bold;
-            border-top: 2px solid #667eea;
-        }
-
-        .summary-table .total-row td {
-            color: #374151;
-        }
-
-        .summary-table .positive-value {
-            color: #10b981;
-            font-weight: 600;
-        }
-
-        .summary-table .negative-value {
-            color: #ef4444;
-            font-weight: 600;
-        }
-
-        .summary-table .neutral-value {
-            color: #374151;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error-message {
+        /* 手機版隱藏目標欄位 */
+        .summary-table th:nth-child(2),
+        .summary-table td:nth-child(2),
+        .summary-table th:nth-child(6),
+        .summary-table td:nth-child(6) {
             display: none;
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px 0;
-            border-left: 5px solid #dc2626;
         }
-
-        @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            .metric-row {
-                grid-template-columns: 120px 1fr;
-                gap: 10px;
-            }
-            
-            .metric-label {
-                font-size: 0.85em;
-            }
-            
-            .metric-value {
-                font-size: 1em;
-            }
-            
-            .percentage {
-                font-size: 0.7em;
-                padding: 2px 8px;
-            }
-
-            /* 表格手機版樣式 */
-            .summary-table-container {
-                padding: 15px;
-            }
-
-            .summary-table-title {
-                font-size: 1.2em;
-            }
-
-            .summary-table {
-                font-size: 0.8em;
-            }
-
-            .summary-table th,
-            .summary-table td {
-                padding: 8px 4px;
-            }
-
-            /* 手機版隱藏目標欄位 */
-            .summary-table th:nth-child(2),
-            .summary-table td:nth-child(2),
-            .summary-table th:nth-child(6),
-            .summary-table td:nth-child(6) {
-                display: none;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📊 立展業績報表分析系統</h1>
-            <p style="color: #666; font-size: 1.1em; margin-top: 10px;">上傳每日業績報表，即時查看各店表現</p>
-        </div>
-
-        <div class="upload-section">
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📁</div>
-                <div class="upload-text">拖曳Excel檔案到這裡，或點擊下方按鈕選擇檔案</div>
-                <div style="color: #999; margin-top: 10px;">支援格式：.xlsx, .xls</div>
-                <input type="file" id="fileInput" accept=".xlsx,.xls">
-                <button class="btn" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
-            </div>
-            <div class="error-message" id="errorMessage"></div>
-        </div>
-
-        <div class="loading" id="loading">
-            <div class="loading-spinner"></div>
-            <div style="color: #667eea; font-size: 1.2em;">正在分析資料...</div>
-        </div>
-
-        <div class="summary-table-container" id="summaryTable">
-            <div class="summary-table-title">📊 業績總覽</div>
-            <table class="summary-table" id="summaryTableContent">
-                <!-- 表格內容將由JavaScript生成 -->
-            </table>
-        </div>
-
-        <div class="dashboard" id="dashboard"></div>
-    </div>
-
-    <script>
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const dashboard = document.getElementById('dashboard');
-        const loading = document.getElementById('loading');
-        const errorMessage = document.getElementById('errorMessage');
-
-        // 拖放功能
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) {
-                handleFile(file);
-            }
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                handleFile(file);
-            }
-        });
-
-        function handleFile(file) {
-            if (!file.name.match(/\.(xlsx|xls)$/)) {
-                showError('請上傳有效的Excel檔案（.xlsx 或 .xls）');
-                return;
-            }
-
-            loading.style.display = 'block';
-            dashboard.style.display = 'none';
-            errorMessage.style.display = 'none';
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    processData(jsonData);
-                } catch (error) {
-                    showError('檔案讀取失敗：' + error.message);
-                    loading.style.display = 'none';
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        function processData(data) {
-            try {
-                // ========== 步驟1：動態查找關鍵行的位置 ==========
-                const keyRows = {};
-                for (let i = 0; i < data.length; i++) {
-                    const label = data[i][0];
-                    if (label === '合計') keyRows.total = i;
-                    else if (label === '本月目標') keyRows.target = i;
-                    else if (label === '實際毛利率(含銷補)') keyRows.marginRate = i;
-                    else if (label === '實際毛利額(含銷補)') keyRows.marginAmount = i;
-                    else if (label === '預估毛利額') keyRows.marginTarget = i;
-                }
-                
-                // 驗證是否找到關鍵行
-                if (!keyRows.total || !keyRows.target) {
-                    throw new Error('無法找到關鍵資料行。請確認檔案格式是否正確。');
-                }
-                
-                console.log('找到的關鍵行位置：', keyRows);
-                
-                // ========== 步驟2：動態搜索店名和列位置 ==========
-                const storeColumns = {};
-                const storeNames = ['TC[i]store', '中友[i]store', 'MOP台中[i]store', '耐斯[i]store', '垂楊[i]store'];
-                const storeDisplayNames = {
-                    'TC[i]store': '中港',
-                    '中友[i]store': '中友',
-                    'MOP台中[i]store': '台中三井',
-                    '耐斯[i]store': '耐斯',
-                    '垂楊[i]store': '垂楊'
-                };
-                
-                // 在前5行中搜索店名
-                for (let rowIdx = 0; rowIdx < 5; rowIdx++) {
-                    for (let colIdx = 0; colIdx < data[rowIdx].length; colIdx++) {
-                        const cell = data[rowIdx][colIdx];
-                        if (cell && storeNames.includes(cell)) {
-                            const displayName = storeDisplayNames[cell];
-                            
-                            // 找到店名後，往右找"合計"列
-                            let totalCol = colIdx + 2;  // 預設在+2位置
-                            
-                            // 驗證是否為合計列
-                            if (rowIdx + 1 < data.length) {
-                                for (let c = colIdx; c < Math.min(colIdx + 5, data[rowIdx + 1].length); c++) {
-                                    if (data[rowIdx + 1][c] === '合計') {
-                                        totalCol = c;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            // 在合計列附近搜索毛利資料（可能在合計列本身，或右側1-2列）
-                            let marginCol = totalCol;
-                            let foundMargin = false;
-                            
-                            if (keyRows.marginAmount) {
-                                // 先檢查合計列本身
-                                const totalColMargin = parseFloat(data[keyRows.marginAmount][totalCol]);
-                                if (!isNaN(totalColMargin) && totalColMargin > 100) {
-                                    marginCol = totalCol;
-                                    foundMargin = true;
-                                } else {
-                                    // 在合計列右側1-3列中搜索
-                                    for (let c = totalCol + 1; c < Math.min(totalCol + 4, data[keyRows.marginAmount].length); c++) {
-                                        const val = parseFloat(data[keyRows.marginAmount][c]);
-                                        if (!isNaN(val) && val > 100) {
-                                            marginCol = c;
-                                            foundMargin = true;
-                                            break;
-                                        }
-                                    }
-                                    
-                                    // 如果還是沒找到，往左側搜索（針對某些特殊格式）
-                                    if (!foundMargin) {
-                                        for (let c = colIdx; c < totalCol; c++) {
-                                            const val = parseFloat(data[keyRows.marginAmount][c]);
-                                            if (!isNaN(val) && val > 100) {
-                                                marginCol = c;
-                                                foundMargin = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            storeColumns[displayName] = { col: totalCol, marginCol: marginCol };
-                            
-                            console.log(`${displayName}: 業績列=${totalCol}, 毛利列=${marginCol}, 找到毛利=${foundMargin}`);
-                        }
-                    }
-                }
-                
-                console.log('找到的店家列位置：', storeColumns);
-                
-                // ========== 步驟3：提取每家店的數據 ==========
-                const results = [];
-                const storeOrder = ['中港', '中友', '台中三井', '耐斯', '垂楊'];
-                
-                storeOrder.forEach(storeName => {
-                    if (!storeColumns[storeName]) {
-                        console.warn(`未找到店家：${storeName}`);
-                        return;
-                    }
-                    
-                    const { col, marginCol } = storeColumns[storeName];
-                    
-                    // 提取數據
-                    const currentPerformance = parseFloat(data[keyRows.total][col]) || 0;
-                    const targetPerformance = parseFloat(data[keyRows.target][col]) || 0;
-                    const grossMarginTarget = keyRows.marginTarget ? (parseFloat(data[keyRows.marginTarget][marginCol]) || 0) : 0;
-                    const grossMarginRate = keyRows.marginRate ? (parseFloat(data[keyRows.marginRate][marginCol]) || 0) : 0;
-                    const grossMarginAmount = keyRows.marginAmount ? (parseFloat(data[keyRows.marginAmount][marginCol]) || 0) : 0;
-
-                    // 計算達成率和差異
-                    const performanceRate = targetPerformance > 0 ? (currentPerformance / targetPerformance) * 100 : 0;
-                    const performanceDiff = currentPerformance - targetPerformance;
-                    const marginRate = grossMarginTarget > 0 ? (grossMarginAmount / grossMarginTarget) * 100 : 0;
-                    const marginDiff = grossMarginAmount - grossMarginTarget;
-
-                    results.push({
-                        name: storeName,
-                        currentPerformance,
-                        targetPerformance,
-                        performanceRate,
-                        performanceDiff,
-                        grossMarginAmount,
-                        grossMarginTarget,
-                        marginRate,
-                        marginDiff,
-                        grossMarginRate: grossMarginRate * 100
-                    });
-                    
-                    console.log(`${storeName}數據：`, {
-                        業績: currentPerformance,
-                        目標: targetPerformance,
-                        毛利額: grossMarginAmount
-                    });
-                });
-
-                displayResults(results);
-            } catch (error) {
-                console.error('處理錯誤：', error);
-                showError('資料處理失敗：' + error.message);
-                loading.style.display = 'none';
-            }
-        }
-
-        function displayResults(results) {
-            dashboard.innerHTML = '';
-            
-            // 計算總和
-            const totals = {
-                name: '中區',
-                currentPerformance: 0,
-                targetPerformance: 0,
-                grossMarginAmount: 0,
-                grossMarginTarget: 0,
-                performanceRate: 0,
-                performanceDiff: 0,
-                marginRate: 0,
-                marginDiff: 0,
-                grossMarginRate: 0
-            };
-            
-            results.forEach(store => {
-                totals.currentPerformance += store.currentPerformance;
-                totals.targetPerformance += store.targetPerformance;
-                totals.grossMarginAmount += store.grossMarginAmount;
-                totals.grossMarginTarget += store.grossMarginTarget;
-            });
-            
-            totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
-            totals.performanceRate = totals.targetPerformance > 0 ? (totals.currentPerformance / totals.targetPerformance) * 100 : 0;
-            totals.marginDiff = totals.grossMarginAmount - totals.grossMarginTarget;
-            totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
-            totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
-            
-            // 生成表格
-            generateSummaryTable(results, totals);
-            
-            // 先顯示總和卡片
-            createStoreCard(totals, true);
-            
-            // 再顯示各店卡片
-            results.forEach(store => {
-                createStoreCard(store, false);
-            });
-
-            loading.style.display = 'none';
-            document.getElementById('summaryTable').style.display = 'block';
-            dashboard.style.display = 'grid';
-        }
-
-        function generateSummaryTable(results, totals) {
-            const tableContent = document.getElementById('summaryTableContent');
-            
-            let html = `
-                <thead>
-                    <tr>
-                        <th>店家</th>
-                        <th>目標業績</th>
-                        <th>目前業績</th>
-                        <th>達成率</th>
-                        <th>業績差異</th>
-                        <th>毛利額目標</th>
-                        <th>目前毛利額</th>
-                        <th>毛利達成率</th>
-                        <th>毛利額差異</th>
-                    </tr>
-                </thead>
-                <tbody>
-            `;
-            
-            // 各店資料
-            results.forEach(store => {
-                const perfDiffClass = store.performanceDiff >= 0 ? 'positive-value' : 'negative-value';
-                const perfRateClass = store.performanceRate >= 100 ? 'positive-value' : 'negative-value';
-                const marginDiffClass = store.marginDiff >= 0 ? 'positive-value' : 'negative-value';
-                const marginRateClass = store.marginRate >= 100 ? 'positive-value' : 'negative-value';
-                
-                html += `
-                    <tr>
-                        <td>${store.name}</td>
-                        <td class="neutral-value">${formatNumber(store.targetPerformance)}</td>
-                        <td class="neutral-value">${formatNumber(store.currentPerformance)}</td>
-                        <td class="${perfRateClass}">${store.performanceRate.toFixed(1)}%</td>
-                        <td class="${perfDiffClass}">${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}</td>
-                        <td class="neutral-value">${store.grossMarginTarget > 0 ? formatNumber(store.grossMarginTarget) : '-'}</td>
-                        <td class="neutral-value">${store.grossMarginAmount > 0 ? formatNumber(store.grossMarginAmount) : '-'}</td>
-                        <td class="${marginRateClass}">${store.grossMarginTarget > 0 ? store.marginRate.toFixed(1) + '%' : '-'}</td>
-                        <td class="${marginDiffClass}">${store.grossMarginTarget > 0 ? (store.marginDiff >= 0 ? '+' : '') + formatNumber(store.marginDiff) : '-'}</td>
-                    </tr>
-                `;
-            });
-            
-            // 總計行
-            const totalPerfDiffClass = totals.performanceDiff >= 0 ? 'positive-value' : 'negative-value';
-            const totalPerfRateClass = totals.performanceRate >= 100 ? 'positive-value' : 'negative-value';
-            const totalMarginDiffClass = totals.marginDiff >= 0 ? 'positive-value' : 'negative-value';
-            const totalMarginRateClass = totals.marginRate >= 100 ? 'positive-value' : 'negative-value';
-            
-            html += `
-                    <tr class="total-row">
-                        <td>中區總計</td>
-                        <td>${formatNumber(totals.targetPerformance)}</td>
-                        <td>${formatNumber(totals.currentPerformance)}</td>
-                        <td class="${totalPerfRateClass}">${totals.performanceRate.toFixed(1)}%</td>
-                        <td class="${totalPerfDiffClass}">${totals.performanceDiff >= 0 ? '+' : ''}${formatNumber(totals.performanceDiff)}</td>
-                        <td>${formatNumber(totals.grossMarginTarget)}</td>
-                        <td>${formatNumber(totals.grossMarginAmount)}</td>
-                        <td class="${totalMarginRateClass}">${totals.marginRate.toFixed(1)}%</td>
-                        <td class="${totalMarginDiffClass}">${totals.marginDiff >= 0 ? '+' : ''}${formatNumber(totals.marginDiff)}</td>
-                    </tr>
-                </tbody>
-            `;
-            
-            tableContent.innerHTML = html;
-        }
-
-        function createStoreCard(store, isTotal) {
-                const card = document.createElement('div');
-                card.className = isTotal ? 'store-card total-card' : 'store-card';
-                
-                const performanceClass = store.performanceRate >= 100 ? 'positive' : 'negative';
-                const marginClass = store.marginRate >= 100 ? 'positive' : 'negative';
-                
-                // 建立毛利額達成率的 HTML
-                let marginRateHtml = '';
-                
-                if (store.grossMarginTarget > 0) {
-                    marginRateHtml = `
-                        <div class="metric-row">
-                            <div class="metric-label">毛利額達成率</div>
-                            <div class="metric-value ${marginClass}">
-                                ${store.marginRate.toFixed(1)}%
-                                <span class="percentage ${marginClass}">
-                                    ${store.marginRate >= 100 ? '✓ 達標' : '✗ 未達標'}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="metric-row">
-                            <div class="metric-label">毛利額目標差異</div>
-                            <div>
-                                <div class="metric-value ${marginClass}">
-                                    ${store.marginDiff >= 0 ? '+' : ''}${formatNumber(store.marginDiff)}
-                                </div>
-                                <div class="amount">目標: ${formatNumber(store.grossMarginTarget)} | 實際: ${formatNumber(store.grossMarginAmount)}</div>
-                            </div>
-                        </div>
-                    `;
-                } else if (store.grossMarginAmount > 0) {
-                    marginRateHtml = `
-                        <div class="metric-row">
-                            <div class="metric-label">實際毛利額</div>
-                            <div>
-                                <div class="metric-value neutral">
-                                    ${formatNumber(store.grossMarginAmount)}
-                                </div>
-                                <div class="amount">（無目標資料）</div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    marginRateHtml = `
-                        <div class="metric-row">
-                            <div class="metric-label">毛利額資料</div>
-                            <div class="metric-value" style="color: #999;">
-                                無資料
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                card.innerHTML = `
-                    <div class="store-name">${store.name}</div>
-                    
-                    <div class="metric-row">
-                        <div class="metric-label">業績達成率</div>
-                        <div class="metric-value ${performanceClass}">
-                            ${store.performanceRate.toFixed(1)}%
-                            <span class="percentage ${performanceClass}">
-                                ${store.performanceRate >= 100 ? '✓ 達標' : '✗ 未達標'}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div class="metric-row">
-                        <div class="metric-label">目標業績差異</div>
-                        <div>
-                            <div class="metric-value ${performanceClass}">
-                                ${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}
-                            </div>
-                            <div class="amount">目標: ${formatNumber(store.targetPerformance)} | 目前: ${formatNumber(store.currentPerformance)}</div>
-                        </div>
-                    </div>
-                    
-                    ${marginRateHtml}
-                    
-                    ${store.grossMarginRate > 0 ? `
-                        <div class="metric-row">
-                            <div class="metric-label">整體毛利率</div>
-                            <div class="metric-value neutral">
-                                ${store.grossMarginRate.toFixed(2)}%
-                            </div>
-                        </div>
-                    ` : ''}
-                `;
-                
-                dashboard.appendChild(card);
-        }
-
-        function formatNumber(num) {
-            return new Intl.NumberFormat('zh-TW', {
-                style: 'decimal',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(num);
-        }
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.style.display = 'block';
-        }
-    </script>
-</body>
-</html>
+    }
+</style>
