@@ -244,6 +244,48 @@
             text-align: center;
         }
 
+        .date-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .date-info .main-date {
+            font-size: 1.3em;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .date-info .sub-date {
+            font-size: 1.05em;
+            color: #6b7280;
+        }
+
+        .daily-target {
+            margin-top: 12px;
+            padding: 10px;
+            background: #fff7ed;
+            border-radius: 8px;
+            border-left: 3px solid #f59e0b;
+        }
+
+        .daily-target-label {
+            font-size: 0.85em;
+            color: #92400e;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .daily-target-value {
+            font-size: 1.1em;
+            color: #ea580c;
+            font-weight: bold;
+        }
+
         .summary-table {
             width: 100%;
             border-collapse: collapse;
@@ -351,6 +393,18 @@
                 font-size: 1.2em;
             }
 
+            .date-info {
+                padding: 10px;
+            }
+
+            .date-info .main-date {
+                font-size: 0.95em;
+            }
+
+            .date-info .sub-date {
+                font-size: 0.8em;
+            }
+
             .summary-table {
                 font-size: 0.8em;
             }
@@ -366,6 +420,19 @@
             .summary-table th:nth-child(6),
             .summary-table td:nth-child(6) {
                 display: none;
+            }
+
+            .daily-target {
+                padding: 8px;
+                margin-top: 8px;
+            }
+
+            .daily-target-label {
+                font-size: 0.8em;
+            }
+
+            .daily-target-value {
+                font-size: 1em;
             }
         }
     </style>
@@ -395,6 +462,9 @@
 
         <div class="summary-table-container" id="summaryTable">
             <div class="summary-table-title">📊 業績總覽</div>
+            <div class="date-info" id="dateInfo">
+                <!-- 日期資訊將由JavaScript生成 -->
+            </div>
             <table class="summary-table" id="summaryTableContent">
                 <!-- 表格內容將由JavaScript生成 -->
             </table>
@@ -409,6 +479,62 @@
         const dashboard = document.getElementById('dashboard');
         const loading = document.getElementById('loading');
         const errorMessage = document.getElementById('errorMessage');
+
+        // 財年計算函數
+        function calculateFiscalInfo() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // 財年從每年9月28日開始
+            const currentYear = today.getFullYear();
+            const fyStartMonth = 8; // 9月 (0-indexed)
+            const fyStartDay = 28;
+            
+            // 判斷當前日期所屬的財年
+            let fiscalYear;
+            let fyStartDate;
+            
+            if (today.getMonth() > fyStartMonth || (today.getMonth() === fyStartMonth && today.getDate() >= fyStartDay)) {
+                // 在9/28之後，屬於下一財年
+                fiscalYear = currentYear + 1;
+                fyStartDate = new Date(currentYear, fyStartMonth, fyStartDay);
+            } else {
+                // 在9/28之前，屬於當前財年
+                fiscalYear = currentYear;
+                fyStartDate = new Date(currentYear - 1, fyStartMonth, fyStartDay);
+            }
+            
+            // 計算從財年開始到今天的天數
+            const daysSinceFYStart = Math.floor((today - fyStartDate) / (1000 * 60 * 60 * 24));
+            
+            // 計算季度 (每季13週 = 91天)
+            const quarter = Math.floor(daysSinceFYStart / 91) + 1;
+            
+            // 計算季度內的週數
+            const daysInQuarter = daysSinceFYStart % 91;
+            const weekInQuarter = Math.floor(daysInQuarter / 7) + 1;
+            
+            // 計算本月剩餘天數（包含今日）
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            const remainingDays = lastDayOfMonth.getDate() - today.getDate() + 1;
+            
+            // 格式化日期
+            const formatDate = (date) => {
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${month}/${day}`;
+            };
+            
+            return {
+                fiscalYear: String(fiscalYear).slice(-2), // FY26 -> 26
+                quarter: quarter,
+                week: weekInQuarter,
+                yesterday: formatDate(yesterday),
+                remainingDays: remainingDays,
+                currentMonth: today.getMonth() + 1
+            };
+        }
 
         // 拖放功能
         uploadArea.addEventListener('dragover', (e) => {
@@ -614,6 +740,9 @@
         function displayResults(results) {
             dashboard.innerHTML = '';
             
+            // 計算財年信息
+            const fiscalInfo = calculateFiscalInfo();
+            
             // 計算總和
             const totals = {
                 name: '中區',
@@ -641,20 +770,35 @@
             totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
             totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
             
+            // 顯示日期信息
+            displayDateInfo(fiscalInfo);
+            
             // 生成表格
             generateSummaryTable(results, totals);
             
             // 先顯示總和卡片
-            createStoreCard(totals, true);
+            createStoreCard(totals, true, fiscalInfo);
             
             // 再顯示各店卡片
             results.forEach(store => {
-                createStoreCard(store, false);
+                createStoreCard(store, false, fiscalInfo);
             });
 
             loading.style.display = 'none';
             document.getElementById('summaryTable').style.display = 'block';
             dashboard.style.display = 'grid';
+        }
+
+        function displayDateInfo(fiscalInfo) {
+            const dateInfoDiv = document.getElementById('dateInfo');
+            dateInfoDiv.innerHTML = `
+                <div class="main-date">
+                    📅 FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.yesterday}
+                </div>
+                <div class="sub-date">
+                    本月剩餘天數：${fiscalInfo.remainingDays} 天
+                </div>
+            `;
         }
 
         function generateSummaryTable(results, totals) {
@@ -723,12 +867,27 @@
             tableContent.innerHTML = html;
         }
 
-        function createStoreCard(store, isTotal) {
+        function createStoreCard(store, isTotal, fiscalInfo) {
                 const card = document.createElement('div');
                 card.className = isTotal ? 'store-card total-card' : 'store-card';
                 
                 const performanceClass = store.performanceRate >= 100 ? 'positive' : 'negative';
                 const marginClass = store.marginRate >= 100 ? 'positive' : 'negative';
+                
+                // 計算每日需做含稅業績（放在最下方）
+                let dailyTargetHtml = '';
+                if (!isTotal && store.grossMarginTarget > 0 && store.grossMarginRate > 0 && fiscalInfo.remainingDays > 0) {
+                    const marginGap = store.grossMarginTarget - store.grossMarginAmount;
+                    if (marginGap > 0) {
+                        const dailyTarget = (marginGap / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        dailyTargetHtml = `
+                            <div class="daily-target">
+                                <div class="daily-target-label">業績&毛利目標 100% 每日需做含稅業績</div>
+                                <div class="daily-target-value">${formatNumber(dailyTarget)}</div>
+                            </div>
+                        `;
+                    }
+                }
                 
                 // 建立毛利額達成率的 HTML
                 let marginRateHtml = '';
@@ -811,6 +970,8 @@
                             </div>
                         </div>
                     ` : ''}
+                    
+                    ${dailyTargetHtml}
                 `;
                 
                 dashboard.appendChild(card);
