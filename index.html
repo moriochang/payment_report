@@ -14,7 +14,7 @@
 
         body {
             font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1a1a1a;
             min-height: 100vh;
             padding: 20px;
         }
@@ -25,58 +25,60 @@
         }
 
         .header {
-            background: white;
+            background: #2d2d2d;
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             text-align: center;
+            border: 1px solid #3d3d3d;
         }
 
         h1 {
-            color: #667eea;
+            color: #e0e0e0;
             font-size: 2em;
             margin-bottom: 8px;
         }
 
         .upload-section {
-            background: white;
+            background: #2d2d2d;
             border-radius: 20px;
             padding: 25px;
             margin-bottom: 25px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             text-align: center;
+            border: 1px solid #3d3d3d;
         }
 
         .upload-area {
-            border: 3px dashed #667eea;
+            border: 3px dashed #4a9eff;
             border-radius: 15px;
             padding: 30px;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: #f8f9ff;
+            background: #252525;
         }
 
         .upload-area:hover {
-            background: #eef1ff;
-            border-color: #764ba2;
+            background: #2a2a2a;
+            border-color: #5db0ff;
         }
 
         .upload-area.dragover {
-            background: #e0e7ff;
-            border-color: #764ba2;
+            background: #303030;
+            border-color: #5db0ff;
             transform: scale(1.02);
         }
 
         .upload-icon {
             font-size: 3em;
-            color: #667eea;
+            color: #4a9eff;
             margin-bottom: 15px;
         }
 
         .upload-text {
             font-size: 1em;
-            color: #666;
+            color: #b0b0b0;
             margin-bottom: 10px;
         }
 
@@ -85,7 +87,7 @@
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #4a9eff;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -97,8 +99,9 @@
         }
 
         .btn:hover {
+            background: #3a8eef;
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 20px rgba(74, 158, 255, 0.4);
         }
 
         .dashboard {
@@ -108,37 +111,39 @@
         }
 
         .store-card {
-            background: white;
+            background: #2d2d2d;
             border-radius: 15px;
             padding: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
+            border: 1px solid #3d3d3d;
         }
 
         .store-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.4);
+            border-color: #4a9eff;
         }
 
         .total-card {
-            background: linear-gradient(135deg, #f8f9ff 0%, #fff5f5 100%);
-            border: 2px solid #667eea;
+            background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%);
+            border: 2px solid #4a9eff;
             grid-column: 1 / -1;
         }
 
         .total-card .store-name {
-            color: #5a67d8;
+            color: #4a9eff;
             font-size: 1.7em;
-            border-bottom-color: #5a67d8;
+            border-bottom-color: #4a9eff;
             border-bottom-width: 3px;
         }
 
         .store-name {
             font-size: 1.5em;
-            color: #667eea;
+            color: #4a9eff;
             margin-bottom: 15px;
             font-weight: bold;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #4a4a4a;
             padding-bottom: 10px;
         }
 
@@ -147,7 +152,7 @@
             grid-template-columns: 140px 1fr;
             align-items: center;
             padding: 12px 0;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid #3d3d3d;
             gap: 15px;
         }
 
@@ -156,8 +161,8 @@
         }
 
         .metric-label {
-            font-size: 0.95em;
-            color: #555;
+            font-size: 0.97em;
+            color: #d0d0d0;
             font-weight: 500;
         }
 
@@ -167,18 +172,19 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            color: #e0e0e0;
         }
 
         .positive {
-            color: #10b981;
+            color: #34d399;
         }
 
         .negative {
-            color: #ef4444;
+            color: #f87171;
         }
 
         .neutral {
-            color: #667eea;
+            color: #4a9eff;
         }
 
         .percentage {
@@ -191,18 +197,18 @@
         }
 
         .percentage.positive {
-            background: #d1fae5;
-            color: #059669;
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
         }
 
         .percentage.negative {
-            background: #fee2e2;
-            color: #dc2626;
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
         }
 
         .amount {
             font-size: 0.8em;
-            color: #666;
+            color: #888;
             margin-top: 3px;
         }
 
@@ -210,14 +216,15 @@
             display: none;
             text-align: center;
             padding: 40px;
-            background: white;
+            background: #2d2d2d;
             border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3d3d3d;
         }
 
         .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid #3d3d3d;
+            border-top: 4px solid #4a9eff;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -228,17 +235,18 @@
         /* 表格樣式 */
         .summary-table-container {
             display: none;
-            background: white;
+            background: #2d2d2d;
             border-radius: 20px;
             padding: 25px;
             margin-bottom: 25px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             overflow-x: auto;
+            border: 1px solid #3d3d3d;
         }
 
         .summary-table-title {
             font-size: 1.5em;
-            color: #667eea;
+            color: #4a9eff;
             font-weight: bold;
             margin-bottom: 20px;
             text-align: center;
@@ -248,41 +256,41 @@
             text-align: center;
             margin-bottom: 20px;
             padding: 15px;
-            background: #f8f9ff;
+            background: #252525;
             border-radius: 10px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #4a9eff;
         }
 
         .date-info .main-date {
             font-size: 1.3em;
-            color: #374151;
+            color: #e0e0e0;
             font-weight: 600;
             margin-bottom: 5px;
         }
 
         .date-info .sub-date {
             font-size: 1.05em;
-            color: #6b7280;
+            color: #b0b0b0;
         }
 
         .daily-target {
             margin-top: 12px;
             padding: 10px;
-            background: #fff7ed;
+            background: rgba(234, 179, 8, 0.1);
             border-radius: 8px;
-            border-left: 3px solid #f59e0b;
+            border-left: 3px solid #eab308;
         }
 
         .daily-target-label {
             font-size: 0.85em;
-            color: #92400e;
+            color: #b0b0b0;
             font-weight: 600;
             margin-bottom: 3px;
         }
 
         .daily-target-value {
             font-size: 1.1em;
-            color: #ea580c;
+            color: #fbbf24;
             font-weight: bold;
         }
 
@@ -293,53 +301,91 @@
         }
 
         .summary-table th {
-            background: #f3f4f6;
-            color: #374151;
+            background: #252525;
+            color: #b0b0b0;
             padding: 10px 8px;
             text-align: center;
             font-weight: 600;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #3d3d3d;
             font-size: 0.9em;
         }
 
         .summary-table td {
             padding: 8px;
             text-align: right;
-            border: 1px solid #e5e7eb;
+            border: 1px solid #3d3d3d;
+            color: #e0e0e0;
         }
 
         .summary-table td:first-child {
             text-align: left;
             font-weight: 600;
-            color: #374151;
+            color: #b0b0b0;
         }
 
         .summary-table tbody tr:hover {
-            background: #f9fafb;
+            background: #353535;
         }
 
         .summary-table .total-row {
-            background: #f3f4f6;
+            background: #252525;
             font-weight: bold;
-            border-top: 2px solid #667eea;
+            border-top: 2px solid #4a9eff;
         }
 
         .summary-table .total-row td {
-            color: #374151;
+            color: #e0e0e0;
         }
 
         .summary-table .positive-value {
-            color: #10b981;
+            color: #34d399;
             font-weight: 600;
         }
 
         .summary-table .negative-value {
-            color: #ef4444;
+            color: #f87171;
             font-weight: 600;
         }
 
         .summary-table .neutral-value {
-            color: #374151;
+            color: #e0e0e0;
+        }
+
+        /* 進度條樣式 */
+        .progress-container {
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #3d3d3d;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.6s ease, background 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar.positive {
+            background: linear-gradient(90deg, #34d399, #10b981);
+        }
+
+        .progress-bar.negative {
+            background: linear-gradient(90deg, #f87171, #ef4444);
+        }
+
+        .progress-text {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 4px;
+            text-align: right;
         }
 
         @keyframes spin {
@@ -896,11 +942,16 @@
                     marginRateHtml = `
                         <div class="metric-row">
                             <div class="metric-label">毛利額達成率</div>
-                            <div class="metric-value ${marginClass}">
-                                ${store.marginRate.toFixed(1)}%
-                                <span class="percentage ${marginClass}">
-                                    ${store.marginRate >= 100 ? '✓ 達標' : '✗ 未達標'}
-                                </span>
+                            <div style="flex: 1;">
+                                <div class="metric-value ${marginClass}">
+                                    ${store.marginRate.toFixed(1)}%
+                                    ${store.marginRate >= 100 ? '<span class="percentage positive">✓ 達標</span>' : ''}
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-bar-bg">
+                                        <div class="progress-bar ${marginClass}" style="width: ${Math.min(store.marginRate, 100)}%"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -942,11 +993,16 @@
                     
                     <div class="metric-row">
                         <div class="metric-label">業績達成率</div>
-                        <div class="metric-value ${performanceClass}">
-                            ${store.performanceRate.toFixed(1)}%
-                            <span class="percentage ${performanceClass}">
-                                ${store.performanceRate >= 100 ? '✓ 達標' : '✗ 未達標'}
-                            </span>
+                        <div style="flex: 1;">
+                            <div class="metric-value ${performanceClass}">
+                                ${store.performanceRate.toFixed(1)}%
+                                ${store.performanceRate >= 100 ? '<span class="percentage positive">✓ 達標</span>' : ''}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar ${performanceClass}" style="width: ${Math.min(store.performanceRate, 100)}%"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
