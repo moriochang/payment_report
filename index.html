@@ -944,31 +944,42 @@
                 // 計算每日需做含稅業績（放在最下方）
                 let dailyTargetHtml = '';
                 if (!isTotal && store.grossMarginTarget > 0 && store.grossMarginRate > 0 && fiscalInfo.remainingDays > 0) {
-                    const marginGap = store.grossMarginTarget - store.grossMarginAmount;
-                    if (marginGap > 0) {
+                    const currentMarginRate = store.marginRate; // 目前毛利達成率
+                    
+                    // 如果未達到 100%，同時顯示 100% 和 110% 目標
+                    if (currentMarginRate < 100) {
                         // 100% 目標
+                        const marginGap = store.grossMarginTarget - store.grossMarginAmount;
                         const dailyTarget = (marginGap / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
                         
                         // 110% 目標
                         const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
-                        const dailyTarget110 = marginGap110 > 0 ? (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays : 0;
+                        const dailyTarget110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
                         
                         dailyTargetHtml = `
                             <div class="daily-target">
                                 <div class="daily-target-label">業績&毛利目標 100% 每日需做含稅業績</div>
                                 <div class="daily-target-value">${formatNumber(dailyTarget)}</div>
                             </div>
+                            <div class="daily-target-110">
+                                <div class="daily-target-110-label">業績&毛利目標 110% 每日需做含稅業績</div>
+                                <div class="daily-target-110-value">${formatNumber(dailyTarget110)}</div>
+                            </div>
                         `;
-                        
-                        if (dailyTarget110 > 0) {
-                            dailyTargetHtml += `
-                                <div class="daily-target-110">
-                                    <div class="daily-target-110-label">業績&毛利目標 110% 每日需做含稅業績</div>
-                                    <div class="daily-target-110-value">${formatNumber(dailyTarget110)}</div>
-                                </div>
-                            `;
-                        }
                     }
+                    // 如果達到 100% 但未達到 110%，只顯示 110% 目標
+                    else if (currentMarginRate >= 100 && currentMarginRate < 110) {
+                        const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                        const dailyTarget110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        
+                        dailyTargetHtml = `
+                            <div class="daily-target-110">
+                                <div class="daily-target-110-label">業績&毛利目標 110% 每日需做含稅業績</div>
+                                <div class="daily-target-110-value">${formatNumber(dailyTarget110)}</div>
+                            </div>
+                        `;
+                    }
+                    // 如果達到 110%，不顯示任何目標
                 }
                 
                 // 建立毛利額達成率的 HTML
