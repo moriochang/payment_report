@@ -294,6 +294,27 @@
             font-weight: bold;
         }
 
+        .daily-target-110 {
+            margin-top: 8px;
+            padding: 10px;
+            background: rgba(249, 115, 22, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #f97316;
+        }
+
+        .daily-target-110-label {
+            font-size: 0.85em;
+            color: #b0b0b0;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .daily-target-110-value {
+            font-size: 1.1em;
+            color: #fb923c;
+            font-weight: bold;
+        }
+
         .summary-table {
             width: 100%;
             border-collapse: collapse;
@@ -925,13 +946,28 @@
                 if (!isTotal && store.grossMarginTarget > 0 && store.grossMarginRate > 0 && fiscalInfo.remainingDays > 0) {
                     const marginGap = store.grossMarginTarget - store.grossMarginAmount;
                     if (marginGap > 0) {
+                        // 100% 目標
                         const dailyTarget = (marginGap / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        
+                        // 110% 目標
+                        const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                        const dailyTarget110 = marginGap110 > 0 ? (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays : 0;
+                        
                         dailyTargetHtml = `
                             <div class="daily-target">
                                 <div class="daily-target-label">業績&毛利目標 100% 每日需做含稅業績</div>
                                 <div class="daily-target-value">${formatNumber(dailyTarget)}</div>
                             </div>
                         `;
+                        
+                        if (dailyTarget110 > 0) {
+                            dailyTargetHtml += `
+                                <div class="daily-target-110">
+                                    <div class="daily-target-110-label">業績&毛利目標 110% 每日需做含稅業績</div>
+                                    <div class="daily-target-110-value">${formatNumber(dailyTarget110)}</div>
+                                </div>
+                            `;
+                        }
                     }
                 }
                 
