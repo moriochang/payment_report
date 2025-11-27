@@ -243,6 +243,36 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             overflow-x: auto;
             border: 1px solid #3d3d3d;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* 滾動條樣式 */
+        .summary-table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .summary-table-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .summary-table-container::-webkit-scrollbar-thumb {
+            background: #4a9eff;
+            border-radius: 10px;
+        }
+
+        .summary-table-container::-webkit-scrollbar-thumb:hover {
+            background: #6bb0ff;
+        }
+
+        .scroll-hint {
+            display: none;
+            text-align: center;
+            color: #888;
+            font-size: 0.85em;
+            padding: 5px;
+            margin-top: 10px;
         }
 
         .summary-table-title {
@@ -506,6 +536,25 @@
             max-height: 95vh;
             overflow-y: auto;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #4a9eff;
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #6bb0ff;
         }
 
         .modal-header {
@@ -590,69 +639,103 @@
             text-decoration: underline;
         }
 
-        @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            .metric-row {
-                grid-template-columns: 120px 1fr;
-                gap: 10px;
-            }
-            
-            .metric-label {
-                font-size: 0.85em;
-            }
-            
-            .metric-value {
-                font-size: 1em;
-            }
-            
-            .percentage {
-                font-size: 0.7em;
-                padding: 2px 8px;
-            }
-
-            /* 表格手機版樣式 */
-            .summary-table-container {
+        /* 平板樣式 (768px - 1024px) */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .container {
                 padding: 15px;
             }
 
-            .summary-table-title {
-                font-size: 1.2em;
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
             }
 
-            .date-info {
-                padding: 10px;
-            }
-
-            .date-info .main-date {
-                font-size: 0.95em;
-            }
-
-            .date-info .sub-date {
-                font-size: 0.8em;
+            .summary-table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             .summary-table {
+                min-width: 1000px;
+            }
+
+            .region-selector {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .region-btn {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+
+            .modal-content {
+                width: 70%;
+                max-width: 600px;
+            }
+        }
+
+        /* 手機樣式 (最大 768px) */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+                padding: 15px;
+            }
+
+            /* 區域選擇器 */
+            .region-selector {
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 10px;
+            }
+
+            .region-btn {
+                padding: 8px 12px;
+                font-size: 0.85em;
+                flex: 1 1 calc(33.333% - 6px);
+                min-width: 80px;
+            }
+
+            /* 卡片樣式 */
+            .card {
+                padding: 15px;
+            }
+
+            .store-name {
+                font-size: 1.3em;
+                margin-bottom: 12px;
+                padding-bottom: 8px;
+            }
+            
+            .metric-row {
+                grid-template-columns: 100px 1fr;
+                gap: 8px;
+            }
+            
+            .metric-label {
                 font-size: 0.8em;
             }
-
-            .summary-table th,
-            .summary-table td {
-                padding: 8px 4px;
+            
+            .metric-value {
+                font-size: 0.95em;
+            }
+            
+            .percentage {
+                font-size: 0.65em;
+                padding: 2px 6px;
             }
 
-            /* 手機版隱藏目標欄位 */
-            .summary-table th:nth-child(2),
-            .summary-table td:nth-child(2),
-            .summary-table th:nth-child(6),
-            .summary-table td:nth-child(6) {
-                display: none;
+            .amount {
+                font-size: 0.7em;
             }
 
             .daily-target {
@@ -660,12 +743,155 @@
                 margin-top: 8px;
             }
 
-            .daily-target-label {
-                font-size: 0.8em;
+            .daily-target-label,
+            .daily-target-100-label,
+            .daily-target-110-label {
+                font-size: 0.75em;
             }
 
-            .daily-target-value {
+            .daily-target-value,
+            .daily-target-100-value,
+            .daily-target-110-value {
+                font-size: 0.9em;
+            }
+
+            /* 表格手機版樣式 */
+            .summary-table-container {
+                padding: 10px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .summary-table-title {
+                font-size: 1.1em;
+                padding: 10px;
+            }
+
+            .date-info {
+                padding: 8px;
+                font-size: 0.85em;
+            }
+
+            .date-info .main-date {
+                font-size: 0.9em;
+            }
+
+            .date-info .sub-date {
+                font-size: 0.75em;
+            }
+
+            /* 表格可橫向滾動 */
+            .summary-table {
+                font-size: 0.7em;
+                min-width: 1000px;
+                display: table;
+            }
+
+            .summary-table th,
+            .summary-table td {
+                padding: 6px 4px;
+                white-space: nowrap;
+            }
+
+            .scroll-hint {
+                display: block;
+                font-size: 0.8em;
+                color: #4a9eff;
+            }
+
+            /* 浮動視窗手機版 */
+            .modal-content {
+                width: 95%;
+                max-width: 95%;
+                margin: 2% auto;
+                padding: 12px;
+                max-height: 90vh;
+            }
+
+            .modal-title {
+                font-size: 1.1em;
+            }
+
+            .detail-table {
+                font-size: 0.7em;
+            }
+
+            .detail-table th {
+                padding: 5px 3px;
+            }
+
+            .detail-table td {
+                padding: 4px 3px;
+            }
+
+            .close {
+                font-size: 1.5em;
+            }
+
+            /* 上傳區域 */
+            .upload-area {
+                padding: 30px 15px;
+            }
+
+            .upload-icon {
+                font-size: 2.5em;
+            }
+
+            .upload-text {
+                font-size: 0.9em;
+            }
+
+            .upload-hint {
+                font-size: 0.75em;
+            }
+        }
+
+        /* 小手機樣式 (最大 480px) */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.3em;
+                padding: 12px;
+            }
+
+            .region-btn {
+                flex: 1 1 calc(50% - 6px);
+                font-size: 0.8em;
+                padding: 6px 10px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .store-name {
+                font-size: 1.2em;
+            }
+
+            .summary-table {
+                font-size: 0.65em;
+                min-width: 950px;
+            }
+
+            .summary-table th,
+            .summary-table td {
+                padding: 5px 3px;
+            }
+
+            .modal-content {
+                width: 98%;
+                padding: 10px;
+            }
+
+            .modal-title {
                 font-size: 1em;
+            }
+
+            .detail-table {
+                font-size: 0.65em;
+            }
+
+            .scroll-hint {
+                font-size: 0.75em;
             }
         }
     </style>
@@ -714,6 +940,7 @@
             <table class="summary-table" id="summaryTableContent">
                 <!-- 表格內容將由JavaScript生成 -->
             </table>
+            <div class="scroll-hint">← 左右滑動查看更多資訊 →</div>
         </div>
 
         <div class="dashboard" id="dashboard"></div>
