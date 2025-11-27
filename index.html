@@ -145,6 +145,7 @@
             font-weight: bold;
             border-bottom: 2px solid #4a4a4a;
             padding-bottom: 10px;
+            text-align: center;
         }
 
         .metric-row {
@@ -409,6 +410,55 @@
             text-align: right;
         }
 
+        /* 區域選擇器樣式 */
+        .region-selector {
+            background: #2d2d2d;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3d3d3d;
+        }
+
+        .region-title {
+            font-size: 1.1em;
+            color: #e0e0e0;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .region-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .region-btn {
+            background: #3d3d3d;
+            color: #e0e0e0;
+            border: 2px solid #4a4a4a;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .region-btn:hover {
+            background: #4a4a4a;
+            border-color: #4a9eff;
+            transform: translateY(-2px);
+        }
+
+        .region-btn.active {
+            background: #4a9eff;
+            color: white;
+            border-color: #4a9eff;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -508,7 +558,7 @@
     <div class="container">
         <div class="header">
             <h1>📊 立展業績報表分析系統</h1>
-            <p style="color: #666; font-size: 1.1em; margin-top: 10px;">上傳每日業績報表，即時查看各店表現</p>
+            <p style="color: #b0b0b0; font-size: 1.1em; margin-top: 10px;">上傳每日業績報表，即時查看各店表現</p>
         </div>
 
         <div class="upload-section">
@@ -522,9 +572,22 @@
             <div class="error-message" id="errorMessage"></div>
         </div>
 
+        <!-- 區域選擇器 -->
+        <div class="region-selector" id="regionSelector" style="display: none;">
+            <div class="region-title">選擇區域</div>
+            <div class="region-buttons">
+                <button class="region-btn active" data-region="全社">全社</button>
+                <button class="region-btn" data-region="北一區">北一區</button>
+                <button class="region-btn" data-region="北二區">北二區</button>
+                <button class="region-btn" data-region="中區">中區</button>
+                <button class="region-btn" data-region="台南區">台南區</button>
+                <button class="region-btn" data-region="高雄區">高雄區</button>
+            </div>
+        </div>
+
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
-            <div style="color: #667eea; font-size: 1.2em;">正在分析資料...</div>
+            <div style="color: #4a9eff; font-size: 1.2em;">正在分析資料...</div>
         </div>
 
         <div class="summary-table-container" id="summaryTable">
@@ -546,6 +609,61 @@
         const dashboard = document.getElementById('dashboard');
         const loading = document.getElementById('loading');
         const errorMessage = document.getElementById('errorMessage');
+        const regionSelector = document.getElementById('regionSelector');
+
+        // 全局變數存儲處理後的數據
+        let allStoresData = [];
+        let currentRegion = '全社';
+
+        // 店家配置：店名 -> 顯示名稱（代號）
+        const storeConfig = {
+            'NK[i]store': '45',
+            'SYA11[i]store': '51',
+            'TY[i]store': '65',
+            'TC[i]store': '75',
+            '中友[i]store': '76',
+            '西門[i]store': '86',
+            '中山[i]store': '88',
+            'ZU[i]store': '115',
+            '耐斯[i]store': '81',
+            '三多[i]store': '116',
+            'A4[i]store': '57',
+            'TM[i]store': '47',
+            'MS[i]store': '48',
+            '垂楊[i]store': '84',
+            'SP[i]store': '117',
+            'QP[i]store': '61',
+            'MTN[i]store': '89',
+            'MOP台中[i]store': '77',
+            'XBM[i]store': '97',
+            'skm online': '820'
+        };
+
+        // 區域定義
+        const regionConfig = {
+            '全社': ['45', '47', '48', '51', '57', '61', '65', '75', '76', '77', '81', '84', '86', '88', '89', '97', '115', '116', '117', '820'],
+            '北一區': ['45', '47', '48'],
+            '北二區': ['51', '57', '61', '65'],
+            '中區': ['75', '76', '77', '81', '84'],
+            '台南區': ['86', '88', '89', '97'],
+            '高雄區': ['115', '116', '117']
+        };
+
+        // 區域切換功能
+        document.querySelectorAll('.region-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除所有active
+                document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+                // 添加active到當前按鈕
+                this.classList.add('active');
+                // 更新當前區域
+                currentRegion = this.dataset.region;
+                // 重新顯示數據
+                if (allStoresData.length > 0) {
+                    displayResults(allStoresData);
+                }
+            });
+        });
 
         // 財年計算函數
         function calculateFiscalInfo() {
@@ -678,21 +796,14 @@
                 
                 // ========== 步驟2：動態搜索店名和列位置 ==========
                 const storeColumns = {};
-                const storeNames = ['TC[i]store', '中友[i]store', 'MOP台中[i]store', '耐斯[i]store', '垂楊[i]store'];
-                const storeDisplayNames = {
-                    'TC[i]store': '中港',
-                    '中友[i]store': '中友',
-                    'MOP台中[i]store': '台中三井',
-                    '耐斯[i]store': '耐斯',
-                    '垂楊[i]store': '垂楊'
-                };
+                const storeNames = Object.keys(storeConfig);
                 
                 // 在前5行中搜索店名
                 for (let rowIdx = 0; rowIdx < 5; rowIdx++) {
                     for (let colIdx = 0; colIdx < data[rowIdx].length; colIdx++) {
                         const cell = data[rowIdx][colIdx];
                         if (cell && storeNames.includes(cell)) {
-                            const displayName = storeDisplayNames[cell];
+                            const displayName = storeConfig[cell];
                             
                             // 找到店名後，往右找"合計"列
                             let totalCol = colIdx + 2;  // 預設在+2位置
@@ -714,14 +825,14 @@
                             if (keyRows.marginAmount) {
                                 // 先檢查合計列本身
                                 const totalColMargin = parseFloat(data[keyRows.marginAmount][totalCol]);
-                                if (!isNaN(totalColMargin) && totalColMargin > 100) {
+                                if (!isNaN(totalColMargin) && Math.abs(totalColMargin) > 10) {
                                     marginCol = totalCol;
                                     foundMargin = true;
                                 } else {
                                     // 在合計列右側1-3列中搜索
                                     for (let c = totalCol + 1; c < Math.min(totalCol + 4, data[keyRows.marginAmount].length); c++) {
                                         const val = parseFloat(data[keyRows.marginAmount][c]);
-                                        if (!isNaN(val) && val > 100) {
+                                        if (!isNaN(val) && Math.abs(val) > 10) {
                                             marginCol = c;
                                             foundMargin = true;
                                             break;
@@ -732,7 +843,7 @@
                                     if (!foundMargin) {
                                         for (let c = colIdx; c < totalCol; c++) {
                                             const val = parseFloat(data[keyRows.marginAmount][c]);
-                                            if (!isNaN(val) && val > 100) {
+                                            if (!isNaN(val) && Math.abs(val) > 10) {
                                                 marginCol = c;
                                                 foundMargin = true;
                                                 break;
@@ -753,9 +864,9 @@
                 
                 // ========== 步驟3：提取每家店的數據 ==========
                 const results = [];
-                const storeOrder = ['中港', '中友', '台中三井', '耐斯', '垂楊'];
+                const allStoreNames = Object.values(storeConfig);
                 
-                storeOrder.forEach(storeName => {
+                allStoreNames.forEach(storeName => {
                     if (!storeColumns[storeName]) {
                         console.warn(`未找到店家：${storeName}`);
                         return;
@@ -796,6 +907,12 @@
                     });
                 });
 
+                // 存儲所有店家數據
+                allStoresData = results;
+                
+                // 顯示區域選擇器
+                regionSelector.style.display = 'block';
+                
                 displayResults(results);
             } catch (error) {
                 console.error('處理錯誤：', error);
@@ -804,15 +921,21 @@
             }
         }
 
-        function displayResults(results) {
+        function displayResults(allResults) {
             dashboard.innerHTML = '';
+            
+            // 根據當前區域過濾店家並按順序排列
+            const regionStores = regionConfig[currentRegion];
+            const results = regionStores
+                .map(storeName => allResults.find(store => store.name === storeName))
+                .filter(store => store !== undefined);
             
             // 計算財年信息
             const fiscalInfo = calculateFiscalInfo();
             
             // 計算總和
             const totals = {
-                name: '中區',
+                name: currentRegion,
                 currentPerformance: 0,
                 targetPerformance: 0,
                 grossMarginAmount: 0,
@@ -903,7 +1026,7 @@
                         <td class="${perfRateClass}">${store.performanceRate.toFixed(1)}%</td>
                         <td class="${perfDiffClass}">${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}</td>
                         <td class="neutral-value">${store.grossMarginTarget > 0 ? formatNumber(store.grossMarginTarget) : '-'}</td>
-                        <td class="neutral-value">${store.grossMarginAmount > 0 ? formatNumber(store.grossMarginAmount) : '-'}</td>
+                        <td class="${store.grossMarginAmount !== 0 ? (store.grossMarginAmount >= 0 ? 'neutral-value' : 'negative-value') : 'neutral-value'}">${store.grossMarginAmount !== 0 ? formatNumber(store.grossMarginAmount) : '-'}</td>
                         <td class="${marginRateClass}">${store.grossMarginTarget > 0 ? store.marginRate.toFixed(1) + '%' : '-'}</td>
                         <td class="${marginDiffClass}">${store.grossMarginTarget > 0 ? (store.marginDiff >= 0 ? '+' : '') + formatNumber(store.marginDiff) : '-'}</td>
                     </tr>
@@ -918,7 +1041,7 @@
             
             html += `
                     <tr class="total-row">
-                        <td>中區總計</td>
+                        <td>${totals.name}總計</td>
                         <td>${formatNumber(totals.targetPerformance)}</td>
                         <td>${formatNumber(totals.currentPerformance)}</td>
                         <td class="${totalPerfRateClass}">${totals.performanceRate.toFixed(1)}%</td>
@@ -1012,12 +1135,13 @@
                             </div>
                         </div>
                     `;
-                } else if (store.grossMarginAmount > 0) {
+                } else if (store.grossMarginAmount !== 0) {
+                    const amountClass = store.grossMarginAmount >= 0 ? 'neutral' : 'negative';
                     marginRateHtml = `
                         <div class="metric-row">
                             <div class="metric-label">實際毛利額</div>
                             <div>
-                                <div class="metric-value neutral">
+                                <div class="metric-value ${amountClass}">
                                     ${formatNumber(store.grossMarginAmount)}
                                 </div>
                                 <div class="amount">（無目標資料）</div>
@@ -1065,10 +1189,10 @@
                     
                     ${marginRateHtml}
                     
-                    ${store.grossMarginRate > 0 ? `
+                    ${store.grossMarginRate !== 0 ? `
                         <div class="metric-row">
                             <div class="metric-label">整體毛利率</div>
-                            <div class="metric-value neutral">
+                            <div class="metric-value ${store.grossMarginRate >= 0 ? 'neutral' : 'negative'}">
                                 ${store.grossMarginRate.toFixed(2)}%
                             </div>
                         </div>
