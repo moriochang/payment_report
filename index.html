@@ -474,6 +474,14 @@
             border-left: 5px solid #dc2626;
         }
 
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -785,6 +793,7 @@
                     else if (label === '實際毛利率(含銷補)') keyRows.marginRate = i;
                     else if (label === '實際毛利額(含銷補)') keyRows.marginAmount = i;
                     else if (label === '預估毛利額') keyRows.marginTarget = i;
+                    else if (label === '預估毛利率') keyRows.estimatedMarginRate = i;
                 }
                 
                 // 驗證是否找到關鍵行
@@ -880,12 +889,15 @@
                     const grossMarginTarget = keyRows.marginTarget ? (parseFloat(data[keyRows.marginTarget][marginCol]) || 0) : 0;
                     const grossMarginRate = keyRows.marginRate ? (parseFloat(data[keyRows.marginRate][marginCol]) || 0) : 0;
                     const grossMarginAmount = keyRows.marginAmount ? (parseFloat(data[keyRows.marginAmount][marginCol]) || 0) : 0;
+                    const estimatedMarginRate = keyRows.estimatedMarginRate ? (parseFloat(data[keyRows.estimatedMarginRate][marginCol]) || 0) : 0;
+                    const actualMarginRate = grossMarginRate; // 實際毛利率(含銷補)
 
                     // 計算達成率和差異
                     const performanceRate = targetPerformance > 0 ? (currentPerformance / targetPerformance) * 100 : 0;
                     const performanceDiff = currentPerformance - targetPerformance;
                     const marginRate = grossMarginTarget > 0 ? (grossMarginAmount / grossMarginTarget) * 100 : 0;
                     const marginDiff = grossMarginAmount - grossMarginTarget;
+                    const marginRateDiff = actualMarginRate - estimatedMarginRate; // 毛利率差異
 
                     results.push({
                         name: storeName,
@@ -897,7 +909,10 @@
                         grossMarginTarget,
                         marginRate,
                         marginDiff,
-                        grossMarginRate: grossMarginRate * 100
+                        grossMarginRate: grossMarginRate * 100,
+                        estimatedMarginRate: estimatedMarginRate * 100,
+                        actualMarginRate: actualMarginRate * 100,
+                        marginRateDiff: marginRateDiff * 100
                     });
                     
                     console.log(`${storeName}數據：`, {
@@ -944,7 +959,10 @@
                 performanceDiff: 0,
                 marginRate: 0,
                 marginDiff: 0,
-                grossMarginRate: 0
+                grossMarginRate: 0,
+                estimatedMarginRate: 0,
+                actualMarginRate: 0,
+                marginRateDiff: 0
             };
             
             results.forEach(store => {
@@ -959,6 +977,21 @@
             totals.marginDiff = totals.grossMarginAmount - totals.grossMarginTarget;
             totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
             totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
+            
+            // 計算預估毛利率（加權平均）
+            let totalEstimatedMargin = 0;
+            let totalActualMargin = 0;
+            results.forEach(store => {
+                if (store.estimatedMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalEstimatedMargin += (store.estimatedMarginRate / 100) * store.currentPerformance;
+                }
+                if (store.actualMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalActualMargin += (store.actualMarginRate / 100) * store.currentPerformance;
+                }
+            });
+            totals.estimatedMarginRate = totals.currentPerformance > 0 ? (totalEstimatedMargin / totals.currentPerformance) * 100 : 0;
+            totals.actualMarginRate = totals.currentPerformance > 0 ? (totalActualMargin / totals.currentPerformance) * 100 : 0;
+            totals.marginRateDiff = totals.actualMarginRate - totals.estimatedMarginRate;
             
             // 顯示日期信息
             displayDateInfo(fiscalInfo);
@@ -1004,8 +1037,11 @@
                         <th>業績差異</th>
                         <th>毛利額目標</th>
                         <th>目前毛利額</th>
-                        <th>毛利達成率</th>
+                        <th>毛利額達成率</th>
                         <th>毛利額差異</th>
+                        <th>預估毛利率</th>
+                        <th>實際毛利率</th>
+                        <th>毛利率差異</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1018,9 +1054,19 @@
                 const marginDiffClass = store.marginDiff >= 0 ? 'positive-value' : 'negative-value';
                 const marginRateClass = store.marginRate >= 100 ? 'positive-value' : 'negative-value';
                 
+                // 判斷是否需要加符號
+                let storeName = store.name;
+                if (store.performanceRate >= 110 && store.marginRate >= 110) {
+                    // 業績達成率和毛利額達成率都>=110%：鑽石
+                    storeName = `${store.name} 💎`;
+                } else if (store.performanceRate >= 100 && store.marginRate >= 100) {
+                    // 業績達成率和毛利額達成率都>=100%：皇冠
+                    storeName = `${store.name} 👑`;
+                }
+                
                 html += `
                     <tr>
-                        <td>${store.name}</td>
+                        <td>${storeName}</td>
                         <td class="neutral-value">${formatNumber(store.targetPerformance)}</td>
                         <td class="neutral-value">${formatNumber(store.currentPerformance)}</td>
                         <td class="${perfRateClass}">${store.performanceRate.toFixed(1)}%</td>
@@ -1029,6 +1075,9 @@
                         <td class="${store.grossMarginAmount !== 0 ? (store.grossMarginAmount >= 0 ? 'neutral-value' : 'negative-value') : 'neutral-value'}">${store.grossMarginAmount !== 0 ? formatNumber(store.grossMarginAmount) : '-'}</td>
                         <td class="${marginRateClass}">${store.grossMarginTarget > 0 ? store.marginRate.toFixed(1) + '%' : '-'}</td>
                         <td class="${marginDiffClass}">${store.grossMarginTarget > 0 ? (store.marginDiff >= 0 ? '+' : '') + formatNumber(store.marginDiff) : '-'}</td>
+                        <td class="neutral-value">${store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td class="neutral-value">${store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td class="${store.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${store.marginRateDiff !== 0 ? (store.marginRateDiff >= 0 ? '+' : '') + store.marginRateDiff.toFixed(2) + '%' : '-'}</td>
                     </tr>
                 `;
             });
@@ -1050,6 +1099,9 @@
                         <td>${formatNumber(totals.grossMarginAmount)}</td>
                         <td class="${totalMarginRateClass}">${totals.marginRate.toFixed(1)}%</td>
                         <td class="${totalMarginDiffClass}">${totals.marginDiff >= 0 ? '+' : ''}${formatNumber(totals.marginDiff)}</td>
+                        <td>${totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td>${totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td class="${totals.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${totals.marginRateDiff !== 0 ? (totals.marginRateDiff >= 0 ? '+' : '') + totals.marginRateDiff.toFixed(2) + '%' : '-'}</td>
                     </tr>
                 </tbody>
             `;
@@ -1217,5 +1269,9 @@
             errorMessage.style.display = 'block';
         }
     </script>
+
+    <footer class="footer">
+        Created by Morio © 2025
+    </footer>
 </body>
 </html>
