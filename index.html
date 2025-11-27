@@ -482,6 +482,114 @@
             font-size: 0.9em;
         }
 
+        /* 浮動視窗樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: #2d2d2d;
+            margin: 1% auto;
+            padding: 15px;
+            border: 1px solid #4a4a4a;
+            border-radius: 15px;
+            width: 42%;
+            max-width: 550px;
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #4a9eff;
+            padding-bottom: 8px;
+        }
+
+        .modal-title {
+            font-size: 1.3em;
+            color: #4a9eff;
+            font-weight: bold;
+        }
+
+        .close {
+            color: #888;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #e0e0e0;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 0.78em;
+        }
+
+        .detail-table th {
+            background: #252525;
+            color: #b0b0b0;
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #3d3d3d;
+            font-size: 0.9em;
+        }
+
+        .detail-table td {
+            padding: 4px 5px;
+            text-align: right;
+            border: 1px solid #3d3d3d;
+            color: #e0e0e0;
+            line-height: 1.3;
+        }
+
+        .detail-table td:first-child,
+        .detail-table td:nth-child(2) {
+            text-align: center;
+        }
+
+        .holiday {
+            color: #f87171 !important;
+        }
+
+        .detail-table tbody tr:hover {
+            background: #353535;
+        }
+
+        .detail-table .total-row {
+            background: #252525;
+            font-weight: bold;
+            border-top: 2px solid #4a9eff;
+        }
+
+        .clickable-store {
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .clickable-store:hover {
+            color: #4a9eff;
+            text-decoration: underline;
+        }
+
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -611,6 +719,19 @@
         <div class="dashboard" id="dashboard"></div>
     </div>
 
+    <!-- 浮動視窗 -->
+    <div id="storeDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">店家詳細資料</div>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody">
+                <!-- 表格內容將由JavaScript生成 -->
+            </div>
+        </div>
+    </div>
+
     <script>
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -622,6 +743,7 @@
         // 全局變數存儲處理後的數據
         let allStoresData = [];
         let currentRegion = '全社';
+        let currentDisplayResults = []; // 存儲當前顯示的店家結果，供 modal 使用
 
         // 店家配置：店名 -> 顯示名稱（代號）
         const storeConfig = {
@@ -827,6 +949,21 @@
                                 }
                             }
                             
+                            // 向前搜索找到對應的"自營"和"專櫃"列（在第2行，即rowIdx+1）
+                            let selfCol = totalCol;
+                            let counterCol = totalCol;
+                            
+                            // 從合計列向前搜索（最多搜索10列）
+                            for (let c = totalCol - 1; c >= Math.max(totalCol - 10, colIdx); c--) {
+                                if (data[rowIdx + 1][c] === '專櫃') {
+                                    counterCol = c;
+                                }
+                                if (data[rowIdx + 1][c] === '自營') {
+                                    selfCol = c;
+                                    break; // 找到自營就停止，因為自營在最前面
+                                }
+                            }
+                            
                             // 在合計列附近搜索毛利資料（可能在合計列本身，或右側1-2列）
                             let marginCol = totalCol;
                             let foundMargin = false;
@@ -862,9 +999,14 @@
                                 }
                             }
                             
-                            storeColumns[displayName] = { col: totalCol, marginCol: marginCol };
+                            storeColumns[displayName] = { 
+                                col: totalCol, 
+                                marginCol: marginCol,
+                                selfCol: selfCol,
+                                counterCol: counterCol
+                            };
                             
-                            console.log(`${displayName}: 業績列=${totalCol}, 毛利列=${marginCol}, 找到毛利=${foundMargin}`);
+                            console.log(`${displayName}: 業績列=${totalCol}, 毛利列=${marginCol}, 自營列=${selfCol}, 專櫃列=${counterCol}, 找到毛利=${foundMargin}`);
                         }
                     }
                 }
@@ -881,7 +1023,29 @@
                         return;
                     }
                     
-                    const { col, marginCol } = storeColumns[storeName];
+                    const { col, marginCol, selfCol, counterCol } = storeColumns[storeName];
+                    
+                    // 提取每日詳細數據（第3行到第32行，11月1日到11月30日）
+                    const dailyData = [];
+                    for (let dayRow = 3; dayRow <= 32; dayRow++) {
+                        const date = data[dayRow][0];
+                        const weekday = data[dayRow][1];
+                        const selfSales = parseFloat(data[dayRow][selfCol]) || 0;  // 自營
+                        const counterSales = parseFloat(data[dayRow][counterCol]) || 0;  // 專櫃
+                        const totalSales = parseFloat(data[dayRow][col]) || 0;  // 合計
+                        
+                        dailyData.push({
+                            date: date,
+                            weekday: weekday,
+                            selfSales: selfSales,
+                            counterSales: counterSales,
+                            totalSales: totalSales
+                        });
+                    }
+                    
+                    // 提取本月目標的自營和專櫃數據（第35行）
+                    const targetSelf = parseFloat(data[35][selfCol]) || 0;
+                    const targetCounter = parseFloat(data[35][counterCol]) || 0;
                     
                     // 提取數據
                     const currentPerformance = parseFloat(data[keyRows.total][col]) || 0;
@@ -898,6 +1062,16 @@
                     const marginRate = grossMarginTarget > 0 ? (grossMarginAmount / grossMarginTarget) * 100 : 0;
                     const marginDiff = grossMarginAmount - grossMarginTarget;
                     const marginRateDiff = actualMarginRate - estimatedMarginRate; // 毛利率差異
+                    
+                    // 提取去年同期數據（自營、專櫃、合計）
+                    const lastYearSelf = parseFloat(data[37][selfCol]) || 0;
+                    const lastYearCounter = parseFloat(data[37][counterCol]) || 0;
+                    const lastYearPerformance = parseFloat(data[37][col]) || 0;
+                    
+                    // 提取成長率數據（自營、專櫃、合計）
+                    const growthRateSelf = parseFloat(data[38][selfCol]) || 0;
+                    const growthRateCounter = parseFloat(data[38][counterCol]) || 0;
+                    const growthRate = parseFloat(data[38][col]) || 0;
 
                     results.push({
                         name: storeName,
@@ -912,7 +1086,16 @@
                         grossMarginRate: grossMarginRate * 100,
                         estimatedMarginRate: estimatedMarginRate * 100,
                         actualMarginRate: actualMarginRate * 100,
-                        marginRateDiff: marginRateDiff * 100
+                        marginRateDiff: marginRateDiff * 100,
+                        dailyData: dailyData,
+                        lastYearSelf: lastYearSelf,
+                        lastYearCounter: lastYearCounter,
+                        lastYearPerformance: lastYearPerformance,
+                        growthRateSelf: growthRateSelf * 100,
+                        growthRateCounter: growthRateCounter * 100,
+                        growthRate: growthRate * 100,
+                        targetSelf: targetSelf,
+                        targetCounter: targetCounter
                     });
                     
                     console.log(`${storeName}數據：`, {
@@ -944,6 +1127,9 @@
             const results = regionStores
                 .map(storeName => allResults.find(store => store.name === storeName))
                 .filter(store => store !== undefined);
+            
+            // 保存當前顯示的結果供 modal 使用
+            currentDisplayResults = results;
             
             // 計算財年信息
             const fiscalInfo = calculateFiscalInfo();
@@ -1048,25 +1234,25 @@
             `;
             
             // 各店資料
-            results.forEach(store => {
+            results.forEach((store, index) => {
                 const perfDiffClass = store.performanceDiff >= 0 ? 'positive-value' : 'negative-value';
                 const perfRateClass = store.performanceRate >= 100 ? 'positive-value' : 'negative-value';
                 const marginDiffClass = store.marginDiff >= 0 ? 'positive-value' : 'negative-value';
                 const marginRateClass = store.marginRate >= 100 ? 'positive-value' : 'negative-value';
                 
                 // 判斷是否需要加符號
-                let storeName = store.name;
+                let storeNameDisplay = store.name;
                 if (store.performanceRate >= 110 && store.marginRate >= 110) {
                     // 業績達成率和毛利額達成率都>=110%：鑽石
-                    storeName = `${store.name} 💎`;
+                    storeNameDisplay = `${store.name} 💎`;
                 } else if (store.performanceRate >= 100 && store.marginRate >= 100) {
                     // 業績達成率和毛利額達成率都>=100%：皇冠
-                    storeName = `${store.name} 👑`;
+                    storeNameDisplay = `${store.name} 👑`;
                 }
                 
                 html += `
                     <tr>
-                        <td>${storeName}</td>
+                        <td><span class="clickable-store" onclick="showStoreDetail(${index})">${storeNameDisplay}</span></td>
                         <td class="neutral-value">${formatNumber(store.targetPerformance)}</td>
                         <td class="neutral-value">${formatNumber(store.currentPerformance)}</td>
                         <td class="${perfRateClass}">${store.performanceRate.toFixed(1)}%</td>
@@ -1267,6 +1453,138 @@
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
+        }
+
+        // Modal 相關函數
+        function showStoreDetail(index) {
+            const store = currentDisplayResults[index];
+            if (!store) return;
+            
+            const modal = document.getElementById('storeDetailModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalTitle.textContent = `${store.name} - 每日業績明細`;
+            
+            // 計算合計
+            let totalSelf = 0;
+            let totalCounter = 0;
+            let totalAll = 0;
+            
+            store.dailyData.forEach(day => {
+                totalSelf += day.selfSales;
+                totalCounter += day.counterSales;
+                totalAll += day.totalSales;
+            });
+            
+            // 生成表格
+            let tableHTML = `
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>星期</th>
+                            <th>自營</th>
+                            <th>專櫃</th>
+                            <th>合計</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            store.dailyData.forEach(day => {
+                const isHoliday = day.weekday === 'Sat' || day.weekday === 'Sun';
+                const holidayClass = isHoliday ? ' class="holiday"' : '';
+                
+                tableHTML += `
+                    <tr>
+                        <td${holidayClass}>${day.date || ''}</td>
+                        <td${holidayClass}>${day.weekday || ''}</td>
+                        <td>${day.selfSales > 0 ? formatNumber(day.selfSales) : '0'}</td>
+                        <td>${day.counterSales > 0 ? formatNumber(day.counterSales) : '0'}</td>
+                        <td>${day.totalSales > 0 ? formatNumber(day.totalSales) : '0'}</td>
+                    </tr>
+                `;
+            });
+            
+            // 合計行
+            tableHTML += `
+                    <tr class="total-row">
+                        <td colspan="2">合計</td>
+                        <td>${formatNumber(totalSelf)}</td>
+                        <td>${formatNumber(totalCounter)}</td>
+                        <td>${formatNumber(totalAll)}</td>
+                    </tr>
+            `;
+            
+            // 本月目標行（使用實際數據）
+            const targetSelf = store.targetSelf || 0;
+            const targetCounter = store.targetCounter || 0;
+            tableHTML += `
+                    <tr>
+                        <td colspan="2">本月目標</td>
+                        <td>${targetSelf > 0 ? formatNumber(targetSelf) : '-'}</td>
+                        <td>${targetCounter > 0 ? formatNumber(targetCounter) : '-'}</td>
+                        <td>${store.targetPerformance > 0 ? formatNumber(store.targetPerformance) : '-'}</td>
+                    </tr>
+            `;
+            
+            // 達成率行
+            const achievementSelf = targetSelf > 0 ? (totalSelf / targetSelf) * 100 : 0;
+            const achievementCounter = targetCounter > 0 ? (totalCounter / targetCounter) * 100 : 0;
+            tableHTML += `
+                    <tr>
+                        <td colspan="2">達成率</td>
+                        <td class="${achievementSelf >= 100 ? 'positive-value' : 'negative-value'}">${targetSelf > 0 ? achievementSelf.toFixed(2) + '%' : '-'}</td>
+                        <td class="${achievementCounter >= 100 ? 'positive-value' : 'negative-value'}">${targetCounter > 0 ? achievementCounter.toFixed(2) + '%' : '-'}</td>
+                        <td class="${store.performanceRate >= 100 ? 'positive-value' : 'negative-value'}">${store.performanceRate.toFixed(2)}%</td>
+                    </tr>
+            `;
+            
+            // 去年本月實績行
+            if (store.lastYearPerformance && store.lastYearPerformance > 0) {
+                tableHTML += `
+                    <tr>
+                        <td colspan="2">去年本月實績</td>
+                        <td>${store.lastYearSelf > 0 ? formatNumber(store.lastYearSelf) : '-'}</td>
+                        <td>${store.lastYearCounter > 0 ? formatNumber(store.lastYearCounter) : '-'}</td>
+                        <td>${formatNumber(store.lastYearPerformance)}</td>
+                    </tr>
+                `;
+            }
+            
+            // 成長率行
+            if (store.growthRate !== undefined) {
+                tableHTML += `
+                    <tr>
+                        <td colspan="2">成長率</td>
+                        <td class="${store.growthRateSelf >= 0 ? 'positive-value' : 'negative-value'}">${store.growthRateSelf.toFixed(2)}%</td>
+                        <td class="${store.growthRateCounter >= 0 ? 'positive-value' : 'negative-value'}">${store.growthRateCounter.toFixed(2)}%</td>
+                        <td class="${store.growthRate >= 0 ? 'positive-value' : 'negative-value'}">${store.growthRate.toFixed(2)}%</td>
+                    </tr>
+                `;
+            }
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            modalBody.innerHTML = tableHTML;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('storeDetailModal');
+            modal.style.display = 'none';
+        }
+
+        // 點擊 modal 外部關閉
+        window.onclick = function(event) {
+            const modal = document.getElementById('storeDetailModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
         }
     </script>
 
