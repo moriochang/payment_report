@@ -1252,9 +1252,10 @@
                     
                     const { col, marginCol, selfCol, counterCol } = storeColumns[storeName];
                     
-                    // 提取每日詳細數據（第3行到第32行，11月1日到11月30日）
+                    // 提取每日詳細數據（從第3行到合計行的前一行）
                     const dailyData = [];
-                    for (let dayRow = 3; dayRow <= 32; dayRow++) {
+                    const lastDayRow = keyRows.total - 1; // 合計行的前一行是最後一天
+                    for (let dayRow = 3; dayRow <= lastDayRow; dayRow++) {
                         const date = data[dayRow][0];
                         const weekday = data[dayRow][1];
                         const selfSales = parseFloat(data[dayRow][selfCol]) || 0;  // 自營
@@ -1270,9 +1271,9 @@
                         });
                     }
                     
-                    // 提取本月目標的自營和專櫃數據（第35行）
-                    const targetSelf = parseFloat(data[35][selfCol]) || 0;
-                    const targetCounter = parseFloat(data[35][counterCol]) || 0;
+                    // 提取本月目標的自營和專櫃數據（使用動態找到的行）
+                    const targetSelf = parseFloat(data[keyRows.target][selfCol]) || 0;
+                    const targetCounter = parseFloat(data[keyRows.target][counterCol]) || 0;
                     
                     // 提取數據
                     const currentPerformance = parseFloat(data[keyRows.total][col]) || 0;
@@ -1291,14 +1292,18 @@
                     const marginRateDiff = actualMarginRate - estimatedMarginRate; // 毛利率差異
                     
                     // 提取去年同期數據（自營、專櫃、合計）
-                    const lastYearSelf = parseFloat(data[37][selfCol]) || 0;
-                    const lastYearCounter = parseFloat(data[37][counterCol]) || 0;
-                    const lastYearPerformance = parseFloat(data[37][col]) || 0;
+                    // 去年本月實績在合計行 + 3，成長率在合計行 + 4
+                    const lastYearRow = keyRows.total + 3;
+                    const growthRateRow = keyRows.total + 4;
+                    
+                    const lastYearSelf = parseFloat(data[lastYearRow][selfCol]) || 0;
+                    const lastYearCounter = parseFloat(data[lastYearRow][counterCol]) || 0;
+                    const lastYearPerformance = parseFloat(data[lastYearRow][col]) || 0;
                     
                     // 提取成長率數據（自營、專櫃、合計）
-                    const growthRateSelf = parseFloat(data[38][selfCol]) || 0;
-                    const growthRateCounter = parseFloat(data[38][counterCol]) || 0;
-                    const growthRate = parseFloat(data[38][col]) || 0;
+                    const growthRateSelf = parseFloat(data[growthRateRow][selfCol]) || 0;
+                    const growthRateCounter = parseFloat(data[growthRateRow][counterCol]) || 0;
+                    const growthRate = parseFloat(data[growthRateRow][col]) || 0;
 
                     results.push({
                         name: storeName,
@@ -1361,6 +1366,35 @@
             // 計算財年信息
             const fiscalInfo = calculateFiscalInfo();
             
+            // 為每個店家計算每日目標（100%和110%）
+            results.forEach(store => {
+                let dailyTarget100 = 0;
+                let dailyTarget110 = 0;
+                
+                if (store.grossMarginTarget > 0 && store.grossMarginRate > 0 && fiscalInfo.remainingDays > 0) {
+                    // 100% 目標計算
+                    const performanceGap100 = store.targetPerformance - store.currentPerformance;
+                    const dailyTargetByPerformance100 = (performanceGap100 / fiscalInfo.remainingDays) * 1.05;
+                    
+                    const marginGap100 = store.grossMarginTarget - store.grossMarginAmount;
+                    const dailyTargetByMargin100 = (marginGap100 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                    
+                    dailyTarget100 = Math.max(dailyTargetByPerformance100, dailyTargetByMargin100);
+                    
+                    // 110% 目標計算
+                    const performanceGap110 = (store.targetPerformance * 1.1) - store.currentPerformance;
+                    const dailyTargetByPerformance110 = (performanceGap110 / fiscalInfo.remainingDays) * 1.05;
+                    
+                    const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                    const dailyTargetByMargin110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                    
+                    dailyTarget110 = Math.max(dailyTargetByPerformance110, dailyTargetByMargin110);
+                }
+                
+                store.dailyTarget100 = dailyTarget100;
+                store.dailyTarget110 = dailyTarget110;
+            });
+            
             // 計算總和
             const totals = {
                 name: currentRegion,
@@ -1375,7 +1409,9 @@
                 grossMarginRate: 0,
                 estimatedMarginRate: 0,
                 actualMarginRate: 0,
-                marginRateDiff: 0
+                marginRateDiff: 0,
+                dailyTarget100: 0,
+                dailyTarget110: 0
             };
             
             results.forEach(store => {
@@ -1383,6 +1419,8 @@
                 totals.targetPerformance += store.targetPerformance;
                 totals.grossMarginAmount += store.grossMarginAmount;
                 totals.grossMarginTarget += store.grossMarginTarget;
+                totals.dailyTarget100 += store.dailyTarget100;
+                totals.dailyTarget110 += store.dailyTarget110;
             });
             
             totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
@@ -1455,6 +1493,8 @@
                         <th>預估毛利率</th>
                         <th>實際毛利率</th>
                         <th>毛利率差異</th>
+                        <th>100%含稅每日</th>
+                        <th>110%含稅每日</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1491,6 +1531,8 @@
                         <td class="neutral-value">${store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="neutral-value">${store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="${store.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${store.marginRateDiff !== 0 ? (store.marginRateDiff >= 0 ? '+' : '') + store.marginRateDiff.toFixed(2) + '%' : '-'}</td>
+                        <td class="neutral-value">${store.dailyTarget100 > 0 ? formatNumber(store.dailyTarget100) : '-'}</td>
+                        <td class="neutral-value">${store.dailyTarget110 > 0 ? formatNumber(store.dailyTarget110) : '-'}</td>
                     </tr>
                 `;
             });
@@ -1515,6 +1557,8 @@
                         <td>${totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td>${totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="${totals.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${totals.marginRateDiff !== 0 ? (totals.marginRateDiff >= 0 ? '+' : '') + totals.marginRateDiff.toFixed(2) + '%' : '-'}</td>
+                        <td>${totals.dailyTarget100 > 0 ? formatNumber(totals.dailyTarget100) : '-'}</td>
+                        <td>${totals.dailyTarget110 > 0 ? formatNumber(totals.dailyTarget110) : '-'}</td>
                     </tr>
                 </tbody>
             `;
@@ -1601,6 +1645,16 @@
                 if (store.grossMarginTarget > 0) {
                     marginRateHtml = `
                         <div class="metric-row">
+                            <div class="metric-label">毛利額目標差異</div>
+                            <div>
+                                <div class="metric-value ${marginClass}">
+                                    ${store.marginDiff >= 0 ? '+' : ''}${formatNumber(store.marginDiff)}
+                                </div>
+                                <div class="amount">目標: ${formatNumber(store.grossMarginTarget)} | 實際: ${formatNumber(store.grossMarginAmount)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row">
                             <div class="metric-label">毛利額達成率</div>
                             <div style="flex: 1;">
                                 <div class="metric-value ${marginClass}">
@@ -1612,16 +1666,6 @@
                                         <div class="progress-bar ${marginClass}" style="width: ${Math.min(store.marginRate, 100)}%"></div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        
-                        <div class="metric-row">
-                            <div class="metric-label">毛利額目標差異</div>
-                            <div>
-                                <div class="metric-value ${marginClass}">
-                                    ${store.marginDiff >= 0 ? '+' : ''}${formatNumber(store.marginDiff)}
-                                </div>
-                                <div class="amount">目標: ${formatNumber(store.grossMarginTarget)} | 實際: ${formatNumber(store.grossMarginAmount)}</div>
                             </div>
                         </div>
                     `;
@@ -1653,6 +1697,16 @@
                     <div class="store-name">${store.name}</div>
                     
                     <div class="metric-row">
+                        <div class="metric-label">目標業績差異</div>
+                        <div>
+                            <div class="metric-value ${performanceClass}">
+                                ${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}
+                            </div>
+                            <div class="amount">目標: ${formatNumber(store.targetPerformance)} | 目前: ${formatNumber(store.currentPerformance)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-row">
                         <div class="metric-label">業績達成率</div>
                         <div style="flex: 1;">
                             <div class="metric-value ${performanceClass}">
@@ -1664,16 +1718,6 @@
                                     <div class="progress-bar ${performanceClass}" style="width: ${Math.min(store.performanceRate, 100)}%"></div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="metric-row">
-                        <div class="metric-label">目標業績差異</div>
-                        <div>
-                            <div class="metric-value ${performanceClass}">
-                                ${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}
-                            </div>
-                            <div class="amount">目標: ${formatNumber(store.targetPerformance)} | 目前: ${formatNumber(store.currentPerformance)}</div>
                         </div>
                     </div>
                     
@@ -1718,6 +1762,118 @@
             
             modalTitle.textContent = `${store.name} - 每日業績明細`;
             
+            // 台灣國定假日判斷函數
+            function isTaiwanHoliday(dateStr) {
+                if (!dateStr) return false;
+                
+                // 解析日期字串 "11月1日" -> month: 11, day: 1
+                const match = dateStr.match(/(\d+)月(\d+)日/);
+                if (!match) return false;
+                
+                const month = parseInt(match[1]);
+                const day = parseInt(match[2]);
+                
+                // 2024年台灣國定假日列表
+                const holidays2024 = [
+                    {month: 1, day: 1},   // 元旦
+                    {month: 2, day: 8},   // 小年夜（2024）
+                    {month: 2, day: 9},   // 除夕（2024）
+                    {month: 2, day: 10},  // 春節初一（2024）
+                    {month: 2, day: 11},  // 春節初二（2024）
+                    {month: 2, day: 12},  // 春節初三（2024）
+                    {month: 2, day: 13},  // 春節初四（2024）
+                    {month: 2, day: 14},  // 春節初五（2024）
+                    {month: 2, day: 28},  // 和平紀念日
+                    {month: 4, day: 4},   // 兒童節
+                    {month: 4, day: 5},   // 清明節（2024）
+                    {month: 6, day: 10},  // 端午節（2024）
+                    {month: 9, day: 17},  // 中秋節（2024）
+                    {month: 10, day: 10}, // 國慶日
+                ];
+                
+                // 2025年台灣國定假日列表
+                const holidays2025 = [
+                    {month: 1, day: 1},   // 元旦
+                    {month: 1, day: 27},  // 小年夜（2025）
+                    {month: 1, day: 28},  // 除夕（2025）
+                    {month: 1, day: 29},  // 春節初一（2025）
+                    {month: 1, day: 30},  // 春節初二（2025）
+                    {month: 1, day: 31},  // 春節初三（2025）
+                    {month: 2, day: 1},   // 春節初四（2025）
+                    {month: 2, day: 2},   // 春節初五（2025）
+                    {month: 2, day: 28},  // 和平紀念日
+                    {month: 4, day: 3},   // 兒童節（2025）
+                    {month: 4, day: 4},   // 清明節（2025）
+                    {month: 5, day: 31},  // 端午節（2025）
+                    {month: 10, day: 6},  // 中秋節（2025）
+                    {month: 10, day: 10}, // 國慶日
+                ];
+                
+                // 2026年台灣國定假日列表（可繼續擴充）
+                const holidays2026 = [
+                    {month: 1, day: 1},   // 元旦
+                    {month: 2, day: 16},  // 小年夜（2026）
+                    {month: 2, day: 17},  // 除夕（2026）
+                    {month: 2, day: 18},  // 春節初一（2026）
+                    {month: 2, day: 19},  // 春節初二（2026）
+                    {month: 2, day: 20},  // 春節初三（2026）
+                    {month: 2, day: 21},  // 春節初四（2026）
+                    {month: 2, day: 22},  // 春節初五（2026）
+                    {month: 2, day: 28},  // 和平紀念日
+                    {month: 4, day: 3},   // 兒童節（2026）
+                    {month: 4, day: 4},   // 清明節（2026）
+                    {month: 6, day: 19},  // 端午節（2026）
+                    {month: 9, day: 25},  // 中秋節（2026）
+                    {month: 10, day: 10}, // 國慶日
+                ];
+                
+                // 根據當前系統日期判斷使用哪個年份的假日列表
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = now.getMonth() + 1;
+                
+                // 財年邏輯：9/28後進入新財年
+                let fiscalYear = currentYear;
+                if (currentMonth >= 9 && now.getDate() >= 28) {
+                    fiscalYear = currentYear + 1;
+                }
+                
+                // 判斷報表月份對應的年份
+                // 如果報表月份(month)大於等於9月，且當前在9月28日後，則報表年份 = 當前年
+                // 如果報表月份小於9月，且當前在9月28日後，則報表年份 = 下一年
+                let reportYear;
+                if (currentMonth >= 9 && now.getDate() >= 28) {
+                    // 在9/28之後
+                    if (month >= 9) {
+                        reportYear = currentYear;  // 9-12月報表用當年
+                    } else {
+                        reportYear = currentYear + 1;  // 1-8月報表用下一年
+                    }
+                } else {
+                    // 在9/28之前
+                    if (month >= 9) {
+                        reportYear = currentYear - 1;  // 9-12月報表用去年
+                    } else {
+                        reportYear = currentYear;  // 1-8月報表用當年
+                    }
+                }
+                
+                // 根據報表年份選擇假日列表
+                let holidays;
+                if (reportYear === 2024) {
+                    holidays = holidays2024;
+                } else if (reportYear === 2025) {
+                    holidays = holidays2025;
+                } else if (reportYear === 2026) {
+                    holidays = holidays2026;
+                } else {
+                    // 預設使用2025年假日列表
+                    holidays = holidays2025;
+                }
+                
+                return holidays.some(h => h.month === month && h.day === day);
+            }
+            
             // 計算合計
             let totalSelf = 0;
             let totalCounter = 0;
@@ -1745,7 +1901,10 @@
             `;
             
             store.dailyData.forEach(day => {
-                const isHoliday = day.weekday === 'Sat' || day.weekday === 'Sun';
+                // 判斷是否為假日：週六日或國定假日
+                const isWeekendHoliday = day.weekday === 'Sat' || day.weekday === 'Sun';
+                const isNationalHoliday = isTaiwanHoliday(day.date);
+                const isHoliday = isWeekendHoliday || isNationalHoliday;
                 const holidayClass = isHoliday ? ' class="holiday"' : '';
                 
                 tableHTML += `
