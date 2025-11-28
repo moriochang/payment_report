@@ -1072,7 +1072,7 @@
                 fiscalYear: String(fiscalYear).slice(-2), // FY26 -> 26
                 quarter: quarter,
                 week: weekInQuarter,
-                yesterday: formatDate(yesterday),
+                yesterday: formatDate(today),  // 改為顯示今天
                 remainingDays: remainingDays,
                 currentMonth: today.getMonth() + 1
             };
