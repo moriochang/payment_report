@@ -374,13 +374,10 @@
                     
                     // 監聽 blur 事件
                     inputEl.addEventListener('blur', function() {
-                        // 處理空值、單個負號或單個小數點的情況
-                        if (this.value === '' || this.value === '-' || this.value === '.') {
-                            // 保持單元格視覺上為空，但清除無效的輸入符號
-                            if (this.value !== '') {
-                                this.value = ''; // 清除 '-' 或 '.'
-                            }
-                            // 不強制設定為 '0'，而是讓其保持空白
+                        // 【關鍵修正】: 只要值是 ''、'-'、'.' 或 '0'，就強制設定為空字串 ''
+                        if (this.value === '' || this.value === '-' || this.value === '.' || this.value === '0') {
+                            this.value = ''; // 保持單元格視覺上為空
+                            
                             updateUI(); // 確保 UI 立即更新 (此時計算值為 0)
                             saveData(); // 立即存儲 (輸入框為 ''，存儲為 0)
                         }
