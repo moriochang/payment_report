@@ -72,7 +72,7 @@
                 
                 <div class="input-group col-span-3">
                     <label for="paymentTotal" class="block text-sm font-medium text-gray-300">Payment Total (總收入)</label>
-                    <input type="text" id="paymentTotal"
+                    <input type="text" id="paymentTotal" inputmode="decimal"
                         class="mt-1 block w-full px-4 py-3 border border-gray-700 rounded-lg shadow-inner focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out standard-digit-input text-left bg-gray-900 text-white font-bold">
                 </div>
             </div>
@@ -80,13 +80,13 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="input-group">
                     <label for="preSaleSettlement" class="block text-sm font-medium text-gray-300">預售結帳 (減項)</label>
-                    <input type="text" id="preSaleSettlement"
+                    <input type="text" id="preSaleSettlement" inputmode="decimal"
                         class="mt-1 block w-full px-4 py-3 border border-gray-700 rounded-lg shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out standard-digit-input text-left bg-gray-900 text-white">
                 </div>
 
                 <div class="input-group">
                     <label for="acPlus" class="block text-sm font-medium text-gray-300">AC+ (減項)</label>
-                    <input type="text" id="acPlus"
+                    <input type="text" id="acPlus" inputmode="decimal"
                         class="mt-1 block w-full px-4 py-3 border border-gray-700 rounded-lg shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out standard-digit-input text-left bg-gray-900 text-white">
                 </div>
             </div>
@@ -96,25 +96,25 @@
             <div class="grid grid-cols-2 gap-4">
                 <div class="input-group">
                     <label for="skm1Amount" class="block text-sm font-medium text-gray-300">SKM 1</label>
-                    <input type="text" id="skm1Amount"
+                    <input type="text" id="skm1Amount" inputmode="decimal"
                         class="mt-1 block w-full px-4 py-3 border border-gray-700 rounded-lg shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out standard-digit-input text-left bg-gray-900 text-white">
                 </div>
                 
                 <div class="input-group">
                     <label for="skm2Amount" class="block text-sm font-medium text-gray-300">SKM 2</label>
-                    <input type="text" id="skm2Amount"
+                    <input type="text" id="skm2Amount" inputmode="decimal"
                         class="mt-1 block w-full px-4 py-3 border border-gray-700 rounded-lg shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out standard-digit-input text-left bg-gray-900 text-white">
                 </div>
 
                 <div class="input-group">
                     <label for="skmLoyalCustomer" class="block text-sm font-medium text-gray-300">SKM 熟客</label>
-                    <input type="text" id="skmLoyalCustomer"
+                    <input type="text" id="skmLoyalCustomer" inputmode="decimal"
                         class="mt-1 block w-full px-4 py-3 border border-gray-700 rounded-lg shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out standard-digit-input text-left bg-gray-900 text-white">
                 </div>
                 
                 <div class="input-group">
                     <label for="externalAccount" class="block text-sm font-medium text-gray-300">外帳</label>
-                    <input type="text" id="externalAccount"
+                    <input type="text" id="externalAccount" inputmode="decimal"
                         class="mt-1 block w-full px-4 py-3 border border-gray-700 rounded-lg shadow-sm focus:ring-cyan-500 focus:border-cyan-500 transition duration-150 ease-in-out standard-digit-input text-left bg-gray-900 text-white">
                 </div>
             </div>
@@ -437,7 +437,6 @@
         // 頁面載入完成後執行
         window.onload = function() {
             setupEventListeners();
-            // 移除初始值設為 '0' 的程式碼。輸入框現在預設為空。
             updateUI();
             initializeFirebase();
         };
