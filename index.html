@@ -280,7 +280,31 @@
             color: #4a9eff;
             font-weight: bold;
             margin-bottom: 20px;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .csv-export-btn {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.6em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: normal;
+        }
+
+        .csv-export-btn:hover {
+            background: #6bb0ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 158, 255, 0.3);
+        }
+
+        .csv-export-btn:active {
+            transform: translateY(0);
         }
 
         .date-info {
@@ -767,6 +791,11 @@
                 padding: 10px;
             }
 
+            .csv-export-btn {
+                padding: 6px 12px;
+                font-size: 0.7em;
+            }
+
             .date-info {
                 padding: 8px;
                 font-size: 0.85em;
@@ -877,6 +906,11 @@
                 padding: 5px 3px;
             }
 
+            .csv-export-btn {
+                padding: 5px 10px;
+                font-size: 0.65em;
+            }
+
             .modal-content {
                 width: 98%;
                 padding: 10px;
@@ -933,7 +967,10 @@
         </div>
 
         <div class="summary-table-container" id="summaryTable">
-            <div class="summary-table-title">📊 業績總覽</div>
+            <div class="summary-table-title">
+                <span>📊 業績總覽</span>
+                <button class="csv-export-btn" onclick="exportToCSV()">📥 輸出CSV</button>
+            </div>
             <div class="date-info" id="dateInfo">
                 <!-- 日期資訊將由JavaScript生成 -->
             </div>
@@ -1744,6 +1781,150 @@
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             }).format(num);
+        }
+
+        function exportToCSV() {
+            // 獲取當前顯示的結果
+            if (!currentDisplayResults || currentDisplayResults.length === 0) {
+                alert('沒有數據可以輸出');
+                return;
+            }
+
+            // 使用昨天的日期
+            const now = new Date();
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const year = yesterday.getFullYear();
+            const month = yesterday.getMonth() + 1;
+            const day = yesterday.getDate();
+            
+            // 計算財年信息和剩餘天數
+            const fiscalInfo = calculateFiscalInfo();
+            
+            // 獲取當前區域
+            const currentRegion = document.querySelector('.region-btn.active').dataset.region;
+            
+            // CSV標頭
+            const headers = [
+                '店家',
+                '目標業績',
+                '目前業績',
+                '達成率',
+                '業績差異',
+                '毛利額目標',
+                '目前毛利額',
+                '毛利額達成率',
+                '毛利額差異',
+                '預估毛利率',
+                '實際毛利率',
+                '毛利率差異',
+                '100%含稅每日',
+                '110%含稅每日'
+            ];
+
+            // 構建CSV內容
+            let csvContent = '\uFEFF'; // UTF-8 BOM for Excel
+            
+            // 添加標題行：只顯示剩餘天數
+            csvContent += `剩餘天數:${fiscalInfo.remainingDays}天\n`;
+            csvContent += '\n'; // 空一行
+            
+            csvContent += headers.join(',') + '\n';
+
+            // 添加各店數據
+            currentDisplayResults.forEach(store => {
+                const row = [
+                    `"${store.name}"`,
+                    Math.round(store.targetPerformance),
+                    Math.round(store.currentPerformance),
+                    store.performanceRate.toFixed(1) + '%',
+                    Math.round(store.performanceDiff),
+                    store.grossMarginTarget > 0 ? Math.round(store.grossMarginTarget) : '',
+                    store.grossMarginAmount !== 0 ? Math.round(store.grossMarginAmount) : '',
+                    store.grossMarginTarget > 0 ? store.marginRate.toFixed(1) + '%' : '',
+                    store.grossMarginTarget > 0 ? Math.round(store.marginDiff) : '',
+                    store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '',
+                    store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '',
+                    store.marginRateDiff !== 0 ? store.marginRateDiff.toFixed(2) + '%' : '',
+                    store.dailyTarget100 > 0 ? Math.round(store.dailyTarget100) : '',
+                    store.dailyTarget110 > 0 ? Math.round(store.dailyTarget110) : ''
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            // 添加總計行
+            // 計算總計
+            let totals = {
+                name: currentRegion,
+                currentPerformance: 0,
+                targetPerformance: 0,
+                grossMarginAmount: 0,
+                grossMarginTarget: 0,
+                dailyTarget100: 0,
+                dailyTarget110: 0
+            };
+
+            currentDisplayResults.forEach(store => {
+                totals.currentPerformance += store.currentPerformance;
+                totals.targetPerformance += store.targetPerformance;
+                totals.grossMarginAmount += store.grossMarginAmount;
+                totals.grossMarginTarget += store.grossMarginTarget;
+                totals.dailyTarget100 += store.dailyTarget100;
+                totals.dailyTarget110 += store.dailyTarget110;
+            });
+
+            totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
+            totals.performanceRate = totals.targetPerformance > 0 ? (totals.currentPerformance / totals.targetPerformance) * 100 : 0;
+            totals.marginDiff = totals.grossMarginAmount - totals.grossMarginTarget;
+            totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
+            totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
+
+            // 計算毛利率（加權平均）
+            let totalEstimatedMargin = 0;
+            let totalActualMargin = 0;
+            currentDisplayResults.forEach(store => {
+                if (store.estimatedMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalEstimatedMargin += (store.estimatedMarginRate / 100) * store.currentPerformance;
+                }
+                if (store.actualMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalActualMargin += (store.actualMarginRate / 100) * store.currentPerformance;
+                }
+            });
+
+            totals.estimatedMarginRate = totals.currentPerformance > 0 ? (totalEstimatedMargin / totals.currentPerformance) * 100 : 0;
+            totals.actualMarginRate = totals.currentPerformance > 0 ? (totalActualMargin / totals.currentPerformance) * 100 : 0;
+            totals.marginRateDiff = totals.actualMarginRate - totals.estimatedMarginRate;
+
+            const totalRow = [
+                `"${totals.name}總計"`,
+                Math.round(totals.targetPerformance),
+                Math.round(totals.currentPerformance),
+                totals.performanceRate.toFixed(1) + '%',
+                Math.round(totals.performanceDiff),
+                Math.round(totals.grossMarginTarget),
+                Math.round(totals.grossMarginAmount),
+                totals.marginRate.toFixed(1) + '%',
+                Math.round(totals.marginDiff),
+                totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '',
+                totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '',
+                totals.marginRateDiff !== 0 ? totals.marginRateDiff.toFixed(2) + '%' : '',
+                totals.dailyTarget100 > 0 ? Math.round(totals.dailyTarget100) : '',
+                totals.dailyTarget110 > 0 ? Math.round(totals.dailyTarget110) : ''
+            ];
+            csvContent += totalRow.join(',') + '\n';
+
+            // 創建下載連結
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `業績總覽_${currentRegion}_${year}年${month}月${day}日.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function showError(message) {
