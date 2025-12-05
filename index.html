@@ -934,7 +934,7 @@
     <div class="container">
         <div class="header">
             <h1>📊 立展業績報表分析系統</h1>
-            <p style="color: #b0b0b0; font-size: 1.1em; margin-top: 10px;">上傳每日業績報表，即時查看各店表現</p>
+            <p id="headerSubtitle" style="color: #b0b0b0; font-size: 1.1em; margin-top: 10px;">上傳每日業績報表，即時查看各店表現</p>
         </div>
 
         <div class="upload-section">
@@ -1109,7 +1109,8 @@
                 fiscalYear: String(fiscalYear).slice(-2), // FY26 -> 26
                 quarter: quarter,
                 week: weekInQuarter,
-                yesterday: formatDate(today),  // 改為顯示今天
+                today: formatDate(today),  // 今日
+                yesterday: formatDate(yesterday),  // 昨日
                 remainingDays: remainingDays,
                 currentMonth: today.getMonth() + 1
             };
@@ -1403,6 +1404,12 @@
             // 計算財年信息
             const fiscalInfo = calculateFiscalInfo();
             
+            // 更新標題副文字為財年信息
+            const headerSubtitle = document.getElementById('headerSubtitle');
+            if (headerSubtitle) {
+                headerSubtitle.textContent = `FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.today}`;
+            }
+            
             // 為每個店家計算每日目標（100%和110%）
             results.forEach(store => {
                 let dailyTarget100 = 0;
@@ -1504,10 +1511,10 @@
             const dateInfoDiv = document.getElementById('dateInfo');
             dateInfoDiv.innerHTML = `
                 <div class="main-date">
-                    📅 FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.yesterday}
+                    📅 FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.today}
                 </div>
                 <div class="sub-date">
-                    本月剩餘天數：${fiscalInfo.remainingDays} 天
+                    累計至昨日 ${fiscalInfo.yesterday}　本月剩餘天數：${fiscalInfo.remainingDays} 天
                 </div>
             `;
         }
@@ -1826,8 +1833,8 @@
             // 構建CSV內容
             let csvContent = '\uFEFF'; // UTF-8 BOM for Excel
             
-            // 添加標題行：只顯示剩餘天數
-            csvContent += `剩餘天數:${fiscalInfo.remainingDays}天\n`;
+            // 添加標題行：累計至昨日和剩餘天數
+            csvContent += `累計至昨日 ${month}/${day}   本月剩餘天數：${fiscalInfo.remainingDays}天\n`;
             csvContent += '\n'; // 空一行
             
             csvContent += headers.join(',') + '\n';
