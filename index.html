@@ -7,7 +7,2218 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
+            margin: 0;<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>立展業績報表分析</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
+            background: #1a1a1a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: #2d2d2d;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            border: 1px solid #3d3d3d;
+        }
+
+        h1 {
+            color: #e0e0e0;
+            font-size: 2em;
+            margin-bottom: 8px;
+        }
+
+        .upload-section {
+            background: #2d2d2d;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            border: 1px solid #3d3d3d;
+        }
+
+        .upload-area {
+            border: 3px dashed #4a9eff;
+            border-radius: 15px;
+            padding: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #252525;
+        }
+
+        .upload-area:hover {
+            background: #2a2a2a;
+            border-color: #5db0ff;
+        }
+
+        .upload-area.dragover {
+            background: #303030;
+            border-color: #5db0ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #4a9eff;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 1em;
+            color: #b0b0b0;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #3a8eef;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 158, 255, 0.4);
+        }
+
+        .dashboard {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 20px;
+        }
+
+        .store-card {
+            background: #2d2d2d;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            border: 1px solid #3d3d3d;
+        }
+
+        .store-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.4);
+            border-color: #4a9eff;
+        }
+
+        .total-card {
+            background: linear-gradient(135deg, #2d2d2d 0%, #3a3a3a 100%);
+            border: 2px solid #4a9eff;
+            grid-column: 1 / -1;
+        }
+
+        .total-card .store-name {
+            color: #4a9eff;
+            font-size: 1.7em;
+            border-bottom-color: #4a9eff;
+            border-bottom-width: 3px;
+        }
+
+        .store-name {
+            font-size: 1.5em;
+            color: #4a9eff;
+            margin-bottom: 15px;
+            font-weight: bold;
+            border-bottom: 2px solid #4a4a4a;
+            padding-bottom: 10px;
+            text-align: left;
+        }
+
+        .metric-row {
+            display: grid;
+            grid-template-columns: 140px 1fr;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #3d3d3d;
+            gap: 15px;
+        }
+
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+
+        .metric-label {
+            font-size: 0.97em;
+            color: #d0d0d0;
+            font-weight: 500;
+        }
+
+        .metric-value {
+            font-size: 1.15em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e0e0e0;
+        }
+
+        .positive {
+            color: #34d399;
+        }
+
+        .negative {
+            color: #f87171;
+        }
+
+        .neutral {
+            color: #4a9eff;
+        }
+
+        .percentage {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .percentage.positive {
+            background: rgba(52, 211, 153, 0.2);
+            color: #34d399;
+        }
+
+        .percentage.negative {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+
+        .amount {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 3px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: #2d2d2d;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3d3d3d;
+        }
+
+        .loading-spinner {
+            border: 4px solid #3d3d3d;
+            border-top: 4px solid #4a9eff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        /* 表格樣式 */
+        .summary-table-container {
+            display: none;
+            background: #2d2d2d;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+            border: 1px solid #3d3d3d;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* 滾動條樣式 */
+        .summary-table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .summary-table-container::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .summary-table-container::-webkit-scrollbar-thumb {
+            background: #4a9eff;
+            border-radius: 10px;
+        }
+
+        .summary-table-container::-webkit-scrollbar-thumb:hover {
+            background: #6bb0ff;
+        }
+
+        .scroll-hint {
+            display: none;
+            text-align: center;
+            color: #888;
+            font-size: 0.85em;
+            padding: 5px;
+            margin-top: 10px;
+        }
+
+        .summary-table-title {
+            font-size: 1.5em;
+            color: #4a9eff;
+            font-weight: bold;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .csv-export-btn {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.6em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: normal;
+        }
+
+        .csv-export-btn:hover {
+            background: #6bb0ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 158, 255, 0.3);
+        }
+
+        .csv-export-btn:active {
+            transform: translateY(0);
+        }
+
+        .date-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #252525;
+            border-radius: 10px;
+            border-left: 4px solid #4a9eff;
+        }
+
+        .date-info .main-date {
+            font-size: 1.3em;
+            color: #e0e0e0;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .date-info .sub-date {
+            font-size: 1.05em;
+            color: #b0b0b0;
+        }
+
+        .daily-target {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(234, 179, 8, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #eab308;
+        }
+
+        .daily-target-label {
+            font-size: 0.85em;
+            color: #b0b0b0;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .daily-target-value {
+            font-size: 1.1em;
+            color: #fbbf24;
+            font-weight: bold;
+        }
+
+        .daily-target-110 {
+            margin-top: 8px;
+            padding: 10px;
+            background: rgba(249, 115, 22, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid #f97316;
+        }
+
+        .daily-target-110-label {
+            font-size: 0.85em;
+            color: #b0b0b0;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .daily-target-110-value {
+            font-size: 1.1em;
+            color: #fb923c;
+            font-weight: bold;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+
+        .summary-table th {
+            background: #252525;
+            color: #b0b0b0;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #3d3d3d;
+            font-size: 0.9em;
+        }
+
+        .summary-table td {
+            padding: 8px;
+            text-align: right;
+            border: 1px solid #3d3d3d;
+            color: #e0e0e0;
+        }
+
+        .summary-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: #b0b0b0;
+        }
+
+        .summary-table tbody tr:hover {
+            background: #353535;
+        }
+
+        .summary-table .total-row {
+            background: #252525;
+            font-weight: bold;
+            border-top: 2px solid #4a9eff;
+        }
+
+        .summary-table .total-row td {
+            color: #e0e0e0;
+        }
+
+        .summary-table .positive-value {
+            color: #34d399;
+            font-weight: 600;
+        }
+
+        .summary-table .negative-value {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .summary-table .neutral-value {
+            color: #e0e0e0;
+        }
+
+        /* 進度條樣式 */
+        .progress-container {
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #3d3d3d;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.6s ease, background 0.3s ease;
+            position: relative;
+        }
+
+        .progress-bar.positive {
+            background: linear-gradient(90deg, #34d399, #10b981);
+        }
+
+        .progress-bar.negative {
+            background: linear-gradient(90deg, #f87171, #ef4444);
+        }
+
+        .progress-text {
+            font-size: 0.75em;
+            color: #888;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        /* 區域選擇器樣式 */
+        .region-selector {
+            background: #2d2d2d;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: 1px solid #3d3d3d;
+        }
+
+        .region-title {
+            font-size: 1.1em;
+            color: #e0e0e0;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .region-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .region-btn {
+            background: #3d3d3d;
+            color: #e0e0e0;
+            border: 2px solid #4a4a4a;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .region-btn:hover {
+            background: #4a4a4a;
+            border-color: #4a9eff;
+            transform: translateY(-2px);
+        }
+
+        .region-btn.active {
+            background: #4a9eff;
+            color: white;
+            border-color: #4a9eff;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border-left: 5px solid #dc2626;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* 浮動視窗樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            overflow: auto;
+        }
+
+        .modal-content {
+            background-color: #2d2d2d;
+            margin: 1% auto;
+            padding: 15px;
+            border: 1px solid #4a4a4a;
+            border-radius: 15px;
+            width: 42%;
+            max-width: 550px;
+            max-height: 95vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .modal-content::-webkit-scrollbar-track {
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb {
+            background: #4a9eff;
+            border-radius: 10px;
+        }
+
+        .modal-content::-webkit-scrollbar-thumb:hover {
+            background: #6bb0ff;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #4a9eff;
+            padding-bottom: 8px;
+        }
+
+        .modal-title {
+            font-size: 1.3em;
+            color: #4a9eff;
+            font-weight: bold;
+        }
+
+        .close {
+            color: #888;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #e0e0e0;
+        }
+
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 0.78em;
+        }
+
+        .detail-table th {
+            background: #252525;
+            color: #b0b0b0;
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #3d3d3d;
+            font-size: 0.9em;
+        }
+
+        .detail-table td {
+            padding: 4px 5px;
+            text-align: right;
+            border: 1px solid #3d3d3d;
+            color: #e0e0e0;
+            line-height: 1.3;
+        }
+
+        .detail-table td:first-child,
+        .detail-table td:nth-child(2) {
+            text-align: center;
+        }
+
+        .holiday {
+            color: #f87171 !important;
+        }
+
+        .detail-table tbody tr:hover {
+            background: #353535;
+        }
+
+        .detail-table .total-row {
+            background: #252525;
+            font-weight: bold;
+            border-top: 2px solid #4a9eff;
+        }
+
+        .clickable-store {
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .clickable-store:hover {
+            color: #4a9eff;
+            text-decoration: underline;
+        }
+
+        /* 平板樣式 (768px - 1024px) */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            .container {
+                padding: 15px;
+            }
+
+            #headerSubtitle {
+                font-size: 1em !important;
+            }
+
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .summary-table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .summary-table {
+                min-width: 1000px;
+            }
+
+            .region-selector {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .region-btn {
+                padding: 8px 16px;
+                font-size: 0.9em;
+            }
+
+            .modal-content {
+                width: 70%;
+                max-width: 600px;
+            }
+        }
+
+        /* 手機樣式 (最大 768px) */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                padding: 15px 10px;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            h1 {
+                font-size: 1.5em;
+                padding: 15px;
+            }
+
+            #headerSubtitle {
+                font-size: 0.95em !important;
+                margin-top: 5px !important;
+            }
+
+            /* 區域選擇器 */
+            .region-selector {
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 10px;
+            }
+
+            .region-btn {
+                padding: 8px 12px;
+                font-size: 0.85em;
+                flex: 1 1 calc(33.333% - 6px);
+                min-width: 80px;
+            }
+
+            /* 卡片樣式 */
+            .card {
+                padding: 15px;
+            }
+
+            .store-name {
+                font-size: 1.3em;
+                margin-bottom: 12px;
+                padding-bottom: 8px;
+            }
+            
+            .metric-row {
+                grid-template-columns: 100px 1fr;
+                gap: 8px;
+            }
+            
+            .metric-label {
+                font-size: 0.8em;
+            }
+            
+            .metric-value {
+                font-size: 0.95em;
+            }
+            
+            .percentage {
+                font-size: 0.65em;
+                padding: 2px 6px;
+            }
+
+            .amount {
+                font-size: 0.7em;
+            }
+
+            .daily-target {
+                padding: 8px;
+                margin-top: 8px;
+            }
+
+            .daily-target-label,
+            .daily-target-100-label,
+            .daily-target-110-label {
+                font-size: 0.75em;
+            }
+
+            .daily-target-value,
+            .daily-target-100-value,
+            .daily-target-110-value {
+                font-size: 0.9em;
+            }
+
+            /* 表格手機版樣式 */
+            .summary-table-container {
+                padding: 10px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .summary-table-title {
+                font-size: 1.1em;
+                padding: 10px;
+            }
+
+            .csv-export-btn {
+                padding: 6px 12px;
+                font-size: 0.7em;
+            }
+
+            .date-info {
+                padding: 8px;
+                font-size: 0.85em;
+            }
+
+            .date-info .main-date {
+                font-size: 0.9em;
+            }
+
+            .date-info .sub-date {
+                font-size: 0.75em;
+            }
+
+            /* 表格可橫向滾動 */
+            .summary-table {
+                font-size: 0.7em;
+                min-width: 1000px;
+                display: table;
+            }
+
+            .summary-table th,
+            .summary-table td {
+                padding: 6px 4px;
+                white-space: nowrap;
+            }
+
+            .scroll-hint {
+                display: block;
+                font-size: 0.8em;
+                color: #4a9eff;
+            }
+
+            /* 浮動視窗手機版 */
+            .modal-content {
+                width: 95%;
+                max-width: 95%;
+                margin: 2% auto;
+                padding: 12px;
+                max-height: 90vh;
+            }
+
+            .modal-title {
+                font-size: 1.1em;
+            }
+
+            .detail-table {
+                font-size: 0.7em;
+            }
+
+            .detail-table th {
+                padding: 5px 3px;
+            }
+
+            .detail-table td {
+                padding: 4px 3px;
+            }
+
+            .close {
+                font-size: 1.5em;
+            }
+
+            /* 上傳區域 */
+            .upload-area {
+                padding: 30px 15px;
+            }
+
+            .upload-icon {
+                font-size: 2.5em;
+            }
+
+            .upload-text {
+                font-size: 0.9em;
+            }
+
+            .upload-hint {
+                font-size: 0.75em;
+            }
+        }
+
+        /* 小手機樣式 (最大 480px) */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.3em;
+                padding: 12px;
+            }
+
+            #headerSubtitle {
+                font-size: 0.85em !important;
+            }
+
+            .region-btn {
+                flex: 1 1 calc(50% - 6px);
+                font-size: 0.8em;
+                padding: 6px 10px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .store-name {
+                font-size: 1.2em;
+            }
+
+            .summary-table {
+                font-size: 0.65em;
+                min-width: 950px;
+            }
+
+            .summary-table th,
+            .summary-table td {
+                padding: 5px 3px;
+            }
+
+            .csv-export-btn {
+                padding: 5px 10px;
+                font-size: 0.65em;
+            }
+
+            .modal-content {
+                width: 98%;
+                padding: 10px;
+            }
+
+            .modal-title {
+                font-size: 1em;
+            }
+
+            .detail-table {
+                font-size: 0.65em;
+            }
+
+            .scroll-hint {
+                font-size: 0.75em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 立展業績報表分析系統</h1>
+            <p id="headerSubtitle" style="color: #b0b0b0; font-size: 1.1em; margin-top: 10px;">上傳每日業績報表，即時查看各店表現</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">拖曳Excel檔案到這裡，或點擊下方按鈕選擇檔案</div>
+                <div style="color: #999; margin-top: 10px;">支援格式：.xlsx, .xls</div>
+                <input type="file" id="fileInput" accept=".xlsx,.xls">
+                <button class="btn" onclick="document.getElementById('fileInput').click()">選擇檔案</button>
+            </div>
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+
+        <!-- 區域選擇器 -->
+        <div class="region-selector" id="regionSelector">
+            <div class="region-title">選擇區域</div>
+            <div class="region-buttons">
+                <button class="region-btn active" data-region="全社">全社</button>
+                <button class="region-btn" data-region="北一區">北一區</button>
+                <button class="region-btn" data-region="北二區">北二區</button>
+                <button class="region-btn" data-region="中區">中區</button>
+                <button class="region-btn" data-region="台南區">台南區</button>
+                <button class="region-btn" data-region="高雄區">高雄區</button>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <div style="color: #4a9eff; font-size: 1.2em;">正在分析資料...</div>
+        </div>
+
+        <div class="summary-table-container" id="summaryTable">
+            <div class="summary-table-title">
+                <span>📊 業績總覽</span>
+                <button class="csv-export-btn" onclick="exportToCSV()">📥 輸出CSV</button>
+            </div>
+            <div class="date-info" id="dateInfo">
+                <!-- 日期資訊將由JavaScript生成 -->
+            </div>
+            <table class="summary-table" id="summaryTableContent">
+                <!-- 表格內容將由JavaScript生成 -->
+            </table>
+            <div class="scroll-hint">← 左右滑動查看更多資訊 →</div>
+        </div>
+
+        <div class="dashboard" id="dashboard"></div>
+    </div>
+
+    <!-- 浮動視窗 -->
+    <div id="storeDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">店家詳細資料</div>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="modalBody">
+                <!-- 表格內容將由JavaScript生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const dashboard = document.getElementById('dashboard');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const regionSelector = document.getElementById('regionSelector');
+
+        // 全局變數存儲處理後的數據
+        let allStoresData = [];
+        let currentRegion = '全社';
+        let currentDisplayResults = []; // 存儲當前顯示的店家結果，供 modal 使用
+
+        // 店家配置：店名 -> 顯示名稱（代號）
+        const storeConfig = {
+            'NK[i]store': '45',
+            'SYA11[i]store': '51',
+            'TY[i]store': '65',
+            'TC[i]store': '75',
+            '中友[i]store': '76',
+            '西門[i]store': '86',
+            '中山[i]store': '88',
+            'ZU[i]store': '115',
+            '耐斯[i]store': '81',
+            '三多[i]store': '116',
+            'A4[i]store': '57',
+            'TM[i]store': '47',
+            'MS[i]store': '48',
+            '垂楊[i]store': '84',
+            'SP[i]store': '117',
+            'QP[i]store': '61',
+            'MTN[i]store': '89',
+            'MOP台中[i]store': '77',
+            'XBM[i]store': '97',
+            'skm online': '820'
+        };
+
+        // 區域定義
+        const regionConfig = {
+            '全社': ['45', '47', '48', '51', '57', '61', '65', '75', '76', '77', '81', '84', '86', '88', '89', '97', '115', '116', '117', '820'],
+            '北一區': ['45', '47', '48'],
+            '北二區': ['51', '57', '61', '65'],
+            '中區': ['75', '76', '77', '81', '84'],
+            '台南區': ['86', '88', '89', '97'],
+            '高雄區': ['115', '116', '117']
+        };
+
+        // 區域切換功能
+        document.querySelectorAll('.region-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除所有active
+                document.querySelectorAll('.region-btn').forEach(b => b.classList.remove('active'));
+                // 添加active到當前按鈕
+                this.classList.add('active');
+                // 更新當前區域
+                currentRegion = this.dataset.region;
+                // 重新顯示數據
+                if (allStoresData.length > 0) {
+                    displayResults(allStoresData);
+                }
+            });
+        });
+
+        // 財年計算函數
+        function calculateFiscalInfo() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            // 財年從每年9月28日開始
+            const currentYear = today.getFullYear();
+            const fyStartMonth = 8; // 9月 (0-indexed)
+            const fyStartDay = 28;
+            
+            // 判斷當前日期所屬的財年
+            let fiscalYear;
+            let fyStartDate;
+            
+            if (today.getMonth() > fyStartMonth || (today.getMonth() === fyStartMonth && today.getDate() >= fyStartDay)) {
+                // 在9/28之後，屬於下一財年
+                fiscalYear = currentYear + 1;
+                fyStartDate = new Date(currentYear, fyStartMonth, fyStartDay);
+            } else {
+                // 在9/28之前，屬於當前財年
+                fiscalYear = currentYear;
+                fyStartDate = new Date(currentYear - 1, fyStartMonth, fyStartDay);
+            }
+            
+            // 計算從財年開始到今天的天數
+            const daysSinceFYStart = Math.floor((today - fyStartDate) / (1000 * 60 * 60 * 24));
+            
+            // 計算季度 (每季13週 = 91天)
+            const quarter = Math.floor(daysSinceFYStart / 91) + 1;
+            
+            // 計算季度內的週數
+            const daysInQuarter = daysSinceFYStart % 91;
+            const weekInQuarter = Math.floor(daysInQuarter / 7) + 1;
+            
+            // 計算本月剩餘天數（包含今日）
+            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            const remainingDays = lastDayOfMonth.getDate() - today.getDate() + 1;
+            
+            // 格式化日期
+            const formatDate = (date) => {
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${month}/${day}`;
+            };
+            
+            return {
+                fiscalYear: String(fiscalYear).slice(-2), // FY26 -> 26
+                quarter: quarter,
+                week: weekInQuarter,
+                today: formatDate(today),  // 今日
+                yesterday: formatDate(yesterday),  // 昨日
+                remainingDays: remainingDays,
+                currentMonth: today.getMonth() + 1
+            };
+        }
+
+        // 拖放功能
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.match(/\.(xlsx|xls)$/)) {
+                showError('請上傳有效的Excel檔案（.xlsx 或 .xls）');
+                return;
+            }
+
+            loading.style.display = 'block';
+            dashboard.style.display = 'none';
+            errorMessage.style.display = 'none';
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    processData(jsonData);
+                } catch (error) {
+                    showError('檔案讀取失敗：' + error.message);
+                    loading.style.display = 'none';
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processData(data) {
+            try {
+                // ========== 步驟1：動態查找關鍵行的位置 ==========
+                const keyRows = {};
+                for (let i = 0; i < data.length; i++) {
+                    const label = data[i][0];
+                    if (label === '合計') keyRows.total = i;
+                    else if (label === '本月目標') keyRows.target = i;
+                    else if (label === '實際毛利率(含銷補)') keyRows.marginRate = i;
+                    else if (label === '實際毛利額(含銷補)') keyRows.marginAmount = i;
+                    else if (label === '預估毛利額') keyRows.marginTarget = i;
+                    else if (label === '預估毛利率') keyRows.estimatedMarginRate = i;
+                }
+                
+                // 驗證是否找到關鍵行
+                if (!keyRows.total || !keyRows.target) {
+                    throw new Error('無法找到關鍵資料行。請確認檔案格式是否正確。');
+                }
+                
+                console.log('找到的關鍵行位置：', keyRows);
+                
+                // ========== 步驟2：動態搜索店名和列位置 ==========
+                const storeColumns = {};
+                const storeNames = Object.keys(storeConfig);
+                
+                // 在前5行中搜索店名
+                for (let rowIdx = 0; rowIdx < 5; rowIdx++) {
+                    for (let colIdx = 0; colIdx < data[rowIdx].length; colIdx++) {
+                        const cell = data[rowIdx][colIdx];
+                        if (cell && storeNames.includes(cell)) {
+                            const displayName = storeConfig[cell];
+                            
+                            // 找到店名後，往右找"合計"列
+                            let totalCol = colIdx + 2;  // 預設在+2位置
+                            
+                            // 驗證是否為合計列
+                            if (rowIdx + 1 < data.length) {
+                                for (let c = colIdx; c < Math.min(colIdx + 5, data[rowIdx + 1].length); c++) {
+                                    if (data[rowIdx + 1][c] === '合計') {
+                                        totalCol = c;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // 向前搜索找到對應的"自營"和"專櫃"列（在第2行，即rowIdx+1）
+                            let selfCol = totalCol;
+                            let counterCol = totalCol;
+                            
+                            // 從合計列向前搜索（最多搜索10列）
+                            for (let c = totalCol - 1; c >= Math.max(totalCol - 10, colIdx); c--) {
+                                if (data[rowIdx + 1][c] === '專櫃') {
+                                    counterCol = c;
+                                }
+                                if (data[rowIdx + 1][c] === '自營') {
+                                    selfCol = c;
+                                    break; // 找到自營就停止，因為自營在最前面
+                                }
+                            }
+                            
+                            // 在合計列附近搜索毛利資料（可能在合計列本身，或右側1-2列）
+                            let marginCol = totalCol;
+                            let foundMargin = false;
+                            
+                            if (keyRows.marginAmount) {
+                                // 先檢查合計列本身
+                                const totalColMargin = parseFloat(data[keyRows.marginAmount][totalCol]);
+                                if (!isNaN(totalColMargin) && Math.abs(totalColMargin) > 10) {
+                                    marginCol = totalCol;
+                                    foundMargin = true;
+                                } else {
+                                    // 在合計列右側1-3列中搜索
+                                    for (let c = totalCol + 1; c < Math.min(totalCol + 4, data[keyRows.marginAmount].length); c++) {
+                                        const val = parseFloat(data[keyRows.marginAmount][c]);
+                                        if (!isNaN(val) && Math.abs(val) > 10) {
+                                            marginCol = c;
+                                            foundMargin = true;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // 如果還是沒找到，往左側搜索（針對某些特殊格式）
+                                    if (!foundMargin) {
+                                        for (let c = colIdx; c < totalCol; c++) {
+                                            const val = parseFloat(data[keyRows.marginAmount][c]);
+                                            if (!isNaN(val) && Math.abs(val) > 10) {
+                                                marginCol = c;
+                                                foundMargin = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            storeColumns[displayName] = { 
+                                col: totalCol, 
+                                marginCol: marginCol,
+                                selfCol: selfCol,
+                                counterCol: counterCol
+                            };
+                            
+                            console.log(`${displayName}: 業績列=${totalCol}, 毛利列=${marginCol}, 自營列=${selfCol}, 專櫃列=${counterCol}, 找到毛利=${foundMargin}`);
+                        }
+                    }
+                }
+                
+                console.log('找到的店家列位置：', storeColumns);
+                
+                // ========== 步驟3：提取每家店的數據 ==========
+                const results = [];
+                const allStoreNames = Object.values(storeConfig);
+                
+                allStoreNames.forEach(storeName => {
+                    if (!storeColumns[storeName]) {
+                        console.warn(`未找到店家：${storeName}`);
+                        return;
+                    }
+                    
+                    const { col, marginCol, selfCol, counterCol } = storeColumns[storeName];
+                    
+                    // 提取每日詳細數據（從第3行到合計行的前一行）
+                    const dailyData = [];
+                    const lastDayRow = keyRows.total - 1; // 合計行的前一行是最後一天
+                    for (let dayRow = 3; dayRow <= lastDayRow; dayRow++) {
+                        const date = data[dayRow][0];
+                        const weekday = data[dayRow][1];
+                        const selfSales = parseFloat(data[dayRow][selfCol]) || 0;  // 自營
+                        const counterSales = parseFloat(data[dayRow][counterCol]) || 0;  // 專櫃
+                        const totalSales = parseFloat(data[dayRow][col]) || 0;  // 合計
+                        
+                        dailyData.push({
+                            date: date,
+                            weekday: weekday,
+                            selfSales: selfSales,
+                            counterSales: counterSales,
+                            totalSales: totalSales
+                        });
+                    }
+                    
+                    // 提取本月目標的自營和專櫃數據（使用動態找到的行）
+                    const targetSelf = parseFloat(data[keyRows.target][selfCol]) || 0;
+                    const targetCounter = parseFloat(data[keyRows.target][counterCol]) || 0;
+                    
+                    // 提取數據
+                    const currentPerformance = parseFloat(data[keyRows.total][col]) || 0;
+                    const targetPerformance = parseFloat(data[keyRows.target][col]) || 0;
+                    const grossMarginTarget = keyRows.marginTarget ? (parseFloat(data[keyRows.marginTarget][marginCol]) || 0) : 0;
+                    const grossMarginRate = keyRows.marginRate ? (parseFloat(data[keyRows.marginRate][marginCol]) || 0) : 0;
+                    const grossMarginAmount = keyRows.marginAmount ? (parseFloat(data[keyRows.marginAmount][marginCol]) || 0) : 0;
+                    const estimatedMarginRate = keyRows.estimatedMarginRate ? (parseFloat(data[keyRows.estimatedMarginRate][marginCol]) || 0) : 0;
+                    const actualMarginRate = grossMarginRate; // 實際毛利率(含銷補)
+
+                    // 計算達成率和差異
+                    const performanceRate = targetPerformance > 0 ? (currentPerformance / targetPerformance) * 100 : 0;
+                    const performanceDiff = currentPerformance - targetPerformance;
+                    const marginRate = grossMarginTarget > 0 ? (grossMarginAmount / grossMarginTarget) * 100 : 0;
+                    const marginDiff = grossMarginAmount - grossMarginTarget;
+                    const marginRateDiff = actualMarginRate - estimatedMarginRate; // 毛利率差異
+                    
+                    // 提取去年同期數據（自營、專櫃、合計）
+                    // 去年本月實績在合計行 + 3，成長率在合計行 + 4
+                    const lastYearRow = keyRows.total + 3;
+                    const growthRateRow = keyRows.total + 4;
+                    
+                    const lastYearSelf = parseFloat(data[lastYearRow][selfCol]) || 0;
+                    const lastYearCounter = parseFloat(data[lastYearRow][counterCol]) || 0;
+                    const lastYearPerformance = parseFloat(data[lastYearRow][col]) || 0;
+                    
+                    // 提取成長率數據（自營、專櫃、合計）
+                    const growthRateSelf = parseFloat(data[growthRateRow][selfCol]) || 0;
+                    const growthRateCounter = parseFloat(data[growthRateRow][counterCol]) || 0;
+                    const growthRate = parseFloat(data[growthRateRow][col]) || 0;
+
+                    results.push({
+                        name: storeName,
+                        currentPerformance,
+                        targetPerformance,
+                        performanceRate,
+                        performanceDiff,
+                        grossMarginAmount,
+                        grossMarginTarget,
+                        marginRate,
+                        marginDiff,
+                        grossMarginRate: grossMarginRate * 100,
+                        estimatedMarginRate: estimatedMarginRate * 100,
+                        actualMarginRate: actualMarginRate * 100,
+                        marginRateDiff: marginRateDiff * 100,
+                        dailyData: dailyData,
+                        lastYearSelf: lastYearSelf,
+                        lastYearCounter: lastYearCounter,
+                        lastYearPerformance: lastYearPerformance,
+                        growthRateSelf: growthRateSelf * 100,
+                        growthRateCounter: growthRateCounter * 100,
+                        growthRate: growthRate * 100,
+                        targetSelf: targetSelf,
+                        targetCounter: targetCounter
+                    });
+                    
+                    console.log(`${storeName}數據：`, {
+                        業績: currentPerformance,
+                        目標: targetPerformance,
+                        毛利額: grossMarginAmount
+                    });
+                });
+
+                // 存儲所有店家數據
+                allStoresData = results;
+                
+                displayResults(results);
+            } catch (error) {
+                console.error('處理錯誤：', error);
+                showError('資料處理失敗：' + error.message);
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayResults(allResults) {
+            dashboard.innerHTML = '';
+            
+            // 根據當前區域過濾店家並按順序排列
+            const regionStores = regionConfig[currentRegion];
+            const results = regionStores
+                .map(storeName => allResults.find(store => store.name === storeName))
+                .filter(store => store !== undefined);
+            
+            // 保存當前顯示的結果供 modal 使用
+            currentDisplayResults = results;
+            
+            // 計算財年信息
+            const fiscalInfo = calculateFiscalInfo();
+            
+            // 為每個店家計算每日目標（100%和110%）
+            results.forEach(store => {
+                let dailyTarget100 = 0;
+                let dailyTarget110 = 0;
+                
+                if (store.grossMarginTarget > 0 && store.grossMarginRate > 0 && fiscalInfo.remainingDays > 0) {
+                    // 100% 目標計算
+                    const performanceGap100 = store.targetPerformance - store.currentPerformance;
+                    const dailyTargetByPerformance100 = (performanceGap100 / fiscalInfo.remainingDays) * 1.05;
+                    
+                    const marginGap100 = store.grossMarginTarget - store.grossMarginAmount;
+                    const dailyTargetByMargin100 = (marginGap100 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                    
+                    dailyTarget100 = Math.max(dailyTargetByPerformance100, dailyTargetByMargin100);
+                    
+                    // 110% 目標計算
+                    const performanceGap110 = (store.targetPerformance * 1.1) - store.currentPerformance;
+                    const dailyTargetByPerformance110 = (performanceGap110 / fiscalInfo.remainingDays) * 1.05;
+                    
+                    const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                    const dailyTargetByMargin110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                    
+                    dailyTarget110 = Math.max(dailyTargetByPerformance110, dailyTargetByMargin110);
+                }
+                
+                store.dailyTarget100 = dailyTarget100;
+                store.dailyTarget110 = dailyTarget110;
+            });
+            
+            // 計算總和
+            const totals = {
+                name: currentRegion,
+                currentPerformance: 0,
+                targetPerformance: 0,
+                grossMarginAmount: 0,
+                grossMarginTarget: 0,
+                performanceRate: 0,
+                performanceDiff: 0,
+                marginRate: 0,
+                marginDiff: 0,
+                grossMarginRate: 0,
+                estimatedMarginRate: 0,
+                actualMarginRate: 0,
+                marginRateDiff: 0,
+                dailyTarget100: 0,
+                dailyTarget110: 0
+            };
+            
+            results.forEach(store => {
+                totals.currentPerformance += store.currentPerformance;
+                totals.targetPerformance += store.targetPerformance;
+                totals.grossMarginAmount += store.grossMarginAmount;
+                totals.grossMarginTarget += store.grossMarginTarget;
+                totals.dailyTarget100 += store.dailyTarget100;
+                totals.dailyTarget110 += store.dailyTarget110;
+            });
+            
+            totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
+            totals.performanceRate = totals.targetPerformance > 0 ? (totals.currentPerformance / totals.targetPerformance) * 100 : 0;
+            totals.marginDiff = totals.grossMarginAmount - totals.grossMarginTarget;
+            totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
+            totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
+            
+            // 計算預估毛利率（加權平均）
+            let totalEstimatedMargin = 0;
+            let totalActualMargin = 0;
+            results.forEach(store => {
+                if (store.estimatedMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalEstimatedMargin += (store.estimatedMarginRate / 100) * store.currentPerformance;
+                }
+                if (store.actualMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalActualMargin += (store.actualMarginRate / 100) * store.currentPerformance;
+                }
+            });
+            totals.estimatedMarginRate = totals.currentPerformance > 0 ? (totalEstimatedMargin / totals.currentPerformance) * 100 : 0;
+            totals.actualMarginRate = totals.currentPerformance > 0 ? (totalActualMargin / totals.currentPerformance) * 100 : 0;
+            totals.marginRateDiff = totals.actualMarginRate - totals.estimatedMarginRate;
+            
+            // 顯示日期信息
+            displayDateInfo(fiscalInfo);
+            
+            // 生成表格
+            generateSummaryTable(results, totals);
+            
+            // 先顯示總和卡片
+            createStoreCard(totals, true, fiscalInfo);
+            
+            // 再顯示各店卡片
+            results.forEach(store => {
+                createStoreCard(store, false, fiscalInfo);
+            });
+
+            loading.style.display = 'none';
+            document.getElementById('summaryTable').style.display = 'block';
+            dashboard.style.display = 'grid';
+        }
+
+        function displayDateInfo(fiscalInfo) {
+            const dateInfoDiv = document.getElementById('dateInfo');
+            dateInfoDiv.innerHTML = `
+                <div class="main-date">
+                    📅 FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.today}
+                </div>
+                <div class="sub-date">
+                    累計至昨日 ${fiscalInfo.yesterday}　本月剩餘天數：${fiscalInfo.remainingDays} 天
+                </div>
+            `;
+        }
+
+        function generateSummaryTable(results, totals) {
+            const tableContent = document.getElementById('summaryTableContent');
+            
+            let html = `
+                <thead>
+                    <tr>
+                        <th>店家</th>
+                        <th>目標業績</th>
+                        <th>目前業績</th>
+                        <th>達成率</th>
+                        <th>業績差異</th>
+                        <th>毛利額目標</th>
+                        <th>目前毛利額</th>
+                        <th>毛利額達成率</th>
+                        <th>毛利額差異</th>
+                        <th>預估毛利率</th>
+                        <th>實際毛利率</th>
+                        <th>毛利率差異</th>
+                        <th>100%含稅每日</th>
+                        <th>110%含稅每日</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            // 各店資料
+            results.forEach((store, index) => {
+                const perfDiffClass = store.performanceDiff >= 0 ? 'positive-value' : 'negative-value';
+                const perfRateClass = store.performanceRate >= 100 ? 'positive-value' : 'negative-value';
+                const marginDiffClass = store.marginDiff >= 0 ? 'positive-value' : 'negative-value';
+                const marginRateClass = store.marginRate >= 100 ? 'positive-value' : 'negative-value';
+                
+                // 判斷是否需要加符號
+                let storeNameDisplay = store.name;
+                if (store.performanceRate >= 110 && store.marginRate >= 110) {
+                    // 業績達成率和毛利額達成率都>=110%：鑽石
+                    storeNameDisplay = `${store.name} 💎`;
+                } else if (store.performanceRate >= 100 && store.marginRate >= 100) {
+                    // 業績達成率和毛利額達成率都>=100%：皇冠
+                    storeNameDisplay = `${store.name} 👑`;
+                }
+                
+                html += `
+                    <tr>
+                        <td><span class="clickable-store" onclick="showStoreDetail(${index})">${storeNameDisplay}</span></td>
+                        <td class="neutral-value">${formatNumber(store.targetPerformance)}</td>
+                        <td class="neutral-value">${formatNumber(store.currentPerformance)}</td>
+                        <td class="${perfRateClass}">${store.performanceRate.toFixed(1)}%</td>
+                        <td class="${perfDiffClass}">${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}</td>
+                        <td class="neutral-value">${store.grossMarginTarget > 0 ? formatNumber(store.grossMarginTarget) : '-'}</td>
+                        <td class="${store.grossMarginAmount !== 0 ? (store.grossMarginAmount >= 0 ? 'neutral-value' : 'negative-value') : 'neutral-value'}">${store.grossMarginAmount !== 0 ? formatNumber(store.grossMarginAmount) : '-'}</td>
+                        <td class="${marginRateClass}">${store.grossMarginTarget > 0 ? store.marginRate.toFixed(1) + '%' : '-'}</td>
+                        <td class="${marginDiffClass}">${store.grossMarginTarget > 0 ? (store.marginDiff >= 0 ? '+' : '') + formatNumber(store.marginDiff) : '-'}</td>
+                        <td class="neutral-value">${store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td class="neutral-value">${store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td class="${store.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${store.marginRateDiff !== 0 ? (store.marginRateDiff >= 0 ? '+' : '') + store.marginRateDiff.toFixed(2) + '%' : '-'}</td>
+                        <td class="neutral-value">${store.dailyTarget100 > 0 ? formatNumber(store.dailyTarget100) : '-'}</td>
+                        <td class="neutral-value">${store.dailyTarget110 > 0 ? formatNumber(store.dailyTarget110) : '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            // 總計行
+            const totalPerfDiffClass = totals.performanceDiff >= 0 ? 'positive-value' : 'negative-value';
+            const totalPerfRateClass = totals.performanceRate >= 100 ? 'positive-value' : 'negative-value';
+            const totalMarginDiffClass = totals.marginDiff >= 0 ? 'positive-value' : 'negative-value';
+            const totalMarginRateClass = totals.marginRate >= 100 ? 'positive-value' : 'negative-value';
+            
+            html += `
+                    <tr class="total-row">
+                        <td>${totals.name}總計</td>
+                        <td>${formatNumber(totals.targetPerformance)}</td>
+                        <td>${formatNumber(totals.currentPerformance)}</td>
+                        <td class="${totalPerfRateClass}">${totals.performanceRate.toFixed(1)}%</td>
+                        <td class="${totalPerfDiffClass}">${totals.performanceDiff >= 0 ? '+' : ''}${formatNumber(totals.performanceDiff)}</td>
+                        <td>${formatNumber(totals.grossMarginTarget)}</td>
+                        <td>${formatNumber(totals.grossMarginAmount)}</td>
+                        <td class="${totalMarginRateClass}">${totals.marginRate.toFixed(1)}%</td>
+                        <td class="${totalMarginDiffClass}">${totals.marginDiff >= 0 ? '+' : ''}${formatNumber(totals.marginDiff)}</td>
+                        <td>${totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td>${totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '-'}</td>
+                        <td class="${totals.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${totals.marginRateDiff !== 0 ? (totals.marginRateDiff >= 0 ? '+' : '') + totals.marginRateDiff.toFixed(2) + '%' : '-'}</td>
+                        <td>${totals.dailyTarget100 > 0 ? formatNumber(totals.dailyTarget100) : '-'}</td>
+                        <td>${totals.dailyTarget110 > 0 ? formatNumber(totals.dailyTarget110) : '-'}</td>
+                    </tr>
+                </tbody>
+            `;
+            
+            tableContent.innerHTML = html;
+        }
+
+        function createStoreCard(store, isTotal, fiscalInfo) {
+                const card = document.createElement('div');
+                card.className = isTotal ? 'store-card total-card' : 'store-card';
+                
+                const performanceClass = store.performanceRate >= 100 ? 'positive' : 'negative';
+                const marginClass = store.marginRate >= 100 ? 'positive' : 'negative';
+                
+                // 計算每日需做含稅業績（放在最下方）
+                let dailyTargetHtml = '';
+                if (!isTotal && store.grossMarginTarget > 0 && store.grossMarginRate > 0 && fiscalInfo.remainingDays > 0) {
+                    const currentMarginRate = store.marginRate; // 目前毛利達成率
+                    const currentPerformanceRate = store.performanceRate; // 目前業績達成率
+                    
+                    // 如果業績或毛利未達到 100%，同時顯示 100% 和 110% 目標
+                    if (currentMarginRate < 100 || currentPerformanceRate < 100) {
+                        // 100% 目標計算
+                        // 1. 為達到業績100%，每日需做業績（含稅）
+                        const performanceGap100 = store.targetPerformance - store.currentPerformance;
+                        const dailyTargetByPerformance100 = (performanceGap100 / fiscalInfo.remainingDays) * 1.05;
+                        
+                        // 2. 為達到毛利額100%，每日需做業績（含稅）
+                        const marginGap100 = store.grossMarginTarget - store.grossMarginAmount;
+                        const dailyTargetByMargin100 = (marginGap100 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        
+                        // 取兩者較大值
+                        const dailyTarget100 = Math.max(dailyTargetByPerformance100, dailyTargetByMargin100);
+                        
+                        // 110% 目標計算
+                        // 1. 為達到業績110%，每日需做業績（含稅）
+                        const performanceGap110 = (store.targetPerformance * 1.1) - store.currentPerformance;
+                        const dailyTargetByPerformance110 = (performanceGap110 / fiscalInfo.remainingDays) * 1.05;
+                        
+                        // 2. 為達到毛利額110%，每日需做業績（含稅）
+                        const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                        const dailyTargetByMargin110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        
+                        // 取兩者較大值
+                        const dailyTarget110 = Math.max(dailyTargetByPerformance110, dailyTargetByMargin110);
+                        
+                        dailyTargetHtml = `
+                            <div class="daily-target">
+                                <div class="daily-target-label">業績&毛利目標 100% 每日需做含稅業績</div>
+                                <div class="daily-target-value">${formatNumber(dailyTarget100)}</div>
+                            </div>
+                            <div class="daily-target-110">
+                                <div class="daily-target-110-label">業績&毛利目標 110% 每日需做含稅業績</div>
+                                <div class="daily-target-110-value">${formatNumber(dailyTarget110)}</div>
+                            </div>
+                        `;
+                    }
+                    // 如果業績和毛利都達到 100% 但有一個未達到 110%，只顯示 110% 目標
+                    else if (currentMarginRate < 110 || currentPerformanceRate < 110) {
+                        // 1. 為達到業績110%，每日需做業績（含稅）
+                        const performanceGap110 = (store.targetPerformance * 1.1) - store.currentPerformance;
+                        const dailyTargetByPerformance110 = (performanceGap110 / fiscalInfo.remainingDays) * 1.05;
+                        
+                        // 2. 為達到毛利額110%，每日需做業績（含稅）
+                        const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                        const dailyTargetByMargin110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        
+                        // 取兩者較大值
+                        const dailyTarget110 = Math.max(dailyTargetByPerformance110, dailyTargetByMargin110);
+                        
+                        dailyTargetHtml = `
+                            <div class="daily-target-110">
+                                <div class="daily-target-110-label">業績&毛利目標 110% 每日需做含稅業績</div>
+                                <div class="daily-target-110-value">${formatNumber(dailyTarget110)}</div>
+                            </div>
+                        `;
+                    }
+                    // 如果業績和毛利都達到 110%，不顯示任何目標
+                }
+                
+                // 建立毛利額達成率的 HTML
+                let marginRateHtml = '';
+                
+                if (store.grossMarginTarget > 0) {
+                    marginRateHtml = `
+                        <div class="metric-row">
+                            <div class="metric-label">毛利額目標差異</div>
+                            <div>
+                                <div class="metric-value ${marginClass}">
+                                    ${store.marginDiff >= 0 ? '+' : ''}${formatNumber(store.marginDiff)}
+                                </div>
+                                <div class="amount">目標: ${formatNumber(store.grossMarginTarget)} | 實際: ${formatNumber(store.grossMarginAmount)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="metric-row">
+                            <div class="metric-label">毛利額達成率</div>
+                            <div style="flex: 1;">
+                                <div class="metric-value ${marginClass}">
+                                    ${store.marginRate.toFixed(1)}%
+                                    ${store.marginRate >= 100 ? '<span class="percentage positive">✓ 達標</span>' : ''}
+                                </div>
+                                <div class="progress-container">
+                                    <div class="progress-bar-bg">
+                                        <div class="progress-bar ${marginClass}" style="width: ${Math.min(store.marginRate, 100)}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (store.grossMarginAmount !== 0) {
+                    const amountClass = store.grossMarginAmount >= 0 ? 'neutral' : 'negative';
+                    marginRateHtml = `
+                        <div class="metric-row">
+                            <div class="metric-label">實際毛利額</div>
+                            <div>
+                                <div class="metric-value ${amountClass}">
+                                    ${formatNumber(store.grossMarginAmount)}
+                                </div>
+                                <div class="amount">（無目標資料）</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    marginRateHtml = `
+                        <div class="metric-row">
+                            <div class="metric-label">毛利額資料</div>
+                            <div class="metric-value" style="color: #999;">
+                                無資料
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="store-name">${store.name}</div>
+                    
+                    <div class="metric-row">
+                        <div class="metric-label">目標業績差異</div>
+                        <div>
+                            <div class="metric-value ${performanceClass}">
+                                ${store.performanceDiff >= 0 ? '+' : ''}${formatNumber(store.performanceDiff)}
+                            </div>
+                            <div class="amount">目標: ${formatNumber(store.targetPerformance)} | 目前: ${formatNumber(store.currentPerformance)}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-row">
+                        <div class="metric-label">業績達成率</div>
+                        <div style="flex: 1;">
+                            <div class="metric-value ${performanceClass}">
+                                ${store.performanceRate.toFixed(1)}%
+                                ${store.performanceRate >= 100 ? '<span class="percentage positive">✓ 達標</span>' : ''}
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar ${performanceClass}" style="width: ${Math.min(store.performanceRate, 100)}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${marginRateHtml}
+                    
+                    ${store.grossMarginRate !== 0 ? `
+                        <div class="metric-row">
+                            <div class="metric-label">整體毛利率</div>
+                            <div class="metric-value ${store.grossMarginRate >= 0 ? 'neutral' : 'negative'}">
+                                ${store.grossMarginRate.toFixed(2)}%
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${dailyTargetHtml}
+                `;
+                
+                dashboard.appendChild(card);
+        }
+
+        function formatNumber(num) {
+            return new Intl.NumberFormat('zh-TW', {
+                style: 'decimal',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(num);
+        }
+
+        function exportToCSV() {
+            // 獲取當前顯示的結果
+            if (!currentDisplayResults || currentDisplayResults.length === 0) {
+                alert('沒有數據可以輸出');
+                return;
+            }
+
+            // 使用昨天的日期
+            const now = new Date();
+            const yesterday = new Date(now);
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            const year = yesterday.getFullYear();
+            const month = yesterday.getMonth() + 1;
+            const day = yesterday.getDate();
+            
+            // 計算財年信息和剩餘天數
+            const fiscalInfo = calculateFiscalInfo();
+            
+            // 獲取當前區域
+            const currentRegion = document.querySelector('.region-btn.active').dataset.region;
+            
+            // CSV標頭
+            const headers = [
+                '店家',
+                '目標業績',
+                '目前業績',
+                '達成率',
+                '業績差異',
+                '毛利額目標',
+                '目前毛利額',
+                '毛利額達成率',
+                '毛利額差異',
+                '預估毛利率',
+                '實際毛利率',
+                '毛利率差異',
+                '100%含稅每日',
+                '110%含稅每日'
+            ];
+
+            // 構建CSV內容
+            let csvContent = '\uFEFF'; // UTF-8 BOM for Excel
+            
+            // 添加標題行：累計至昨日和剩餘天數
+            csvContent += `累計至昨日 ${month}/${day}   本月剩餘天數：${fiscalInfo.remainingDays}天\n`;
+            csvContent += '\n'; // 空一行
+            
+            csvContent += headers.join(',') + '\n';
+
+            // 添加各店數據
+            currentDisplayResults.forEach(store => {
+                const row = [
+                    `"${store.name}"`,
+                    Math.round(store.targetPerformance),
+                    Math.round(store.currentPerformance),
+                    store.performanceRate.toFixed(1) + '%',
+                    Math.round(store.performanceDiff),
+                    store.grossMarginTarget > 0 ? Math.round(store.grossMarginTarget) : '',
+                    store.grossMarginAmount !== 0 ? Math.round(store.grossMarginAmount) : '',
+                    store.grossMarginTarget > 0 ? store.marginRate.toFixed(1) + '%' : '',
+                    store.grossMarginTarget > 0 ? Math.round(store.marginDiff) : '',
+                    store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '',
+                    store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '',
+                    store.marginRateDiff !== 0 ? store.marginRateDiff.toFixed(2) + '%' : '',
+                    store.dailyTarget100 > 0 ? Math.round(store.dailyTarget100) : '',
+                    store.dailyTarget110 > 0 ? Math.round(store.dailyTarget110) : ''
+                ];
+                csvContent += row.join(',') + '\n';
+            });
+
+            // 添加總計行
+            // 計算總計
+            let totals = {
+                name: currentRegion,
+                currentPerformance: 0,
+                targetPerformance: 0,
+                grossMarginAmount: 0,
+                grossMarginTarget: 0,
+                dailyTarget100: 0,
+                dailyTarget110: 0
+            };
+
+            currentDisplayResults.forEach(store => {
+                totals.currentPerformance += store.currentPerformance;
+                totals.targetPerformance += store.targetPerformance;
+                totals.grossMarginAmount += store.grossMarginAmount;
+                totals.grossMarginTarget += store.grossMarginTarget;
+                totals.dailyTarget100 += store.dailyTarget100;
+                totals.dailyTarget110 += store.dailyTarget110;
+            });
+
+            totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
+            totals.performanceRate = totals.targetPerformance > 0 ? (totals.currentPerformance / totals.targetPerformance) * 100 : 0;
+            totals.marginDiff = totals.grossMarginAmount - totals.grossMarginTarget;
+            totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
+            totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
+
+            // 計算毛利率（加權平均）
+            let totalEstimatedMargin = 0;
+            let totalActualMargin = 0;
+            currentDisplayResults.forEach(store => {
+                if (store.estimatedMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalEstimatedMargin += (store.estimatedMarginRate / 100) * store.currentPerformance;
+                }
+                if (store.actualMarginRate !== 0 && store.currentPerformance > 0) {
+                    totalActualMargin += (store.actualMarginRate / 100) * store.currentPerformance;
+                }
+            });
+
+            totals.estimatedMarginRate = totals.currentPerformance > 0 ? (totalEstimatedMargin / totals.currentPerformance) * 100 : 0;
+            totals.actualMarginRate = totals.currentPerformance > 0 ? (totalActualMargin / totals.currentPerformance) * 100 : 0;
+            totals.marginRateDiff = totals.actualMarginRate - totals.estimatedMarginRate;
+
+            const totalRow = [
+                `"${totals.name}總計"`,
+                Math.round(totals.targetPerformance),
+                Math.round(totals.currentPerformance),
+                totals.performanceRate.toFixed(1) + '%',
+                Math.round(totals.performanceDiff),
+                Math.round(totals.grossMarginTarget),
+                Math.round(totals.grossMarginAmount),
+                totals.marginRate.toFixed(1) + '%',
+                Math.round(totals.marginDiff),
+                totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '',
+                totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '',
+                totals.marginRateDiff !== 0 ? totals.marginRateDiff.toFixed(2) + '%' : '',
+                totals.dailyTarget100 > 0 ? Math.round(totals.dailyTarget100) : '',
+                totals.dailyTarget110 > 0 ? Math.round(totals.dailyTarget110) : ''
+            ];
+            csvContent += totalRow.join(',') + '\n';
+
+            // 創建下載連結
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `業績總覽_${currentRegion}_${year}年${month}月${day}日.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+
+        // Modal 相關函數
+        function showStoreDetail(index) {
+            const store = currentDisplayResults[index];
+            if (!store) return;
+            
+            const modal = document.getElementById('storeDetailModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+            
+            modalTitle.textContent = `${store.name} - 每日業績明細`;
+            
+            // 台灣國定假日判斷函數
+            function isTaiwanHoliday(dateStr) {
+                if (!dateStr) return false;
+                
+                // 解析日期字串 "11月1日" -> month: 11, day: 1
+                const match = dateStr.match(/(\d+)月(\d+)日/);
+                if (!match) return false;
+                
+                const month = parseInt(match[1]);
+                const day = parseInt(match[2]);
+                
+                // 2024年台灣國定假日列表
+                const holidays2024 = [
+                    {month: 1, day: 1},   // 元旦
+                    {month: 2, day: 8},   // 小年夜（2024）
+                    {month: 2, day: 9},   // 除夕（2024）
+                    {month: 2, day: 10},  // 春節初一（2024）
+                    {month: 2, day: 11},  // 春節初二（2024）
+                    {month: 2, day: 12},  // 春節初三（2024）
+                    {month: 2, day: 13},  // 春節初四（2024）
+                    {month: 2, day: 14},  // 春節初五（2024）
+                    {month: 2, day: 28},  // 和平紀念日
+                    {month: 4, day: 4},   // 兒童節
+                    {month: 4, day: 5},   // 清明節（2024）
+                    {month: 6, day: 10},  // 端午節（2024）
+                    {month: 9, day: 17},  // 中秋節（2024）
+                    {month: 10, day: 10}, // 國慶日
+                ];
+                
+                // 2025年台灣國定假日列表
+                const holidays2025 = [
+                    {month: 1, day: 1},   // 元旦
+                    {month: 1, day: 27},  // 小年夜（2025）
+                    {month: 1, day: 28},  // 除夕（2025）
+                    {month: 1, day: 29},  // 春節初一（2025）
+                    {month: 1, day: 30},  // 春節初二（2025）
+                    {month: 1, day: 31},  // 春節初三（2025）
+                    {month: 2, day: 1},   // 春節初四（2025）
+                    {month: 2, day: 2},   // 春節初五（2025）
+                    {month: 2, day: 28},  // 和平紀念日
+                    {month: 4, day: 3},   // 兒童節（2025）
+                    {month: 4, day: 4},   // 清明節（2025）
+                    {month: 5, day: 31},  // 端午節（2025）
+                    {month: 10, day: 6},  // 中秋節（2025）
+                    {month: 10, day: 10}, // 國慶日
+                ];
+                
+                // 2026年台灣國定假日列表（可繼續擴充）
+                const holidays2026 = [
+                    {month: 1, day: 1},   // 元旦
+                    {month: 2, day: 16},  // 小年夜（2026）
+                    {month: 2, day: 17},  // 除夕（2026）
+                    {month: 2, day: 18},  // 春節初一（2026）
+                    {month: 2, day: 19},  // 春節初二（2026）
+                    {month: 2, day: 20},  // 春節初三（2026）
+                    {month: 2, day: 21},  // 春節初四（2026）
+                    {month: 2, day: 22},  // 春節初五（2026）
+                    {month: 2, day: 28},  // 和平紀念日
+                    {month: 4, day: 3},   // 兒童節（2026）
+                    {month: 4, day: 4},   // 清明節（2026）
+                    {month: 6, day: 19},  // 端午節（2026）
+                    {month: 9, day: 25},  // 中秋節（2026）
+                    {month: 10, day: 10}, // 國慶日
+                ];
+                
+                // 根據當前系統日期判斷使用哪個年份的假日列表
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = now.getMonth() + 1;
+                
+                // 財年邏輯：9/28後進入新財年
+                let fiscalYear = currentYear;
+                if (currentMonth >= 9 && now.getDate() >= 28) {
+                    fiscalYear = currentYear + 1;
+                }
+                
+                // 判斷報表月份對應的年份
+                // 如果報表月份(month)大於等於9月，且當前在9月28日後，則報表年份 = 當前年
+                // 如果報表月份小於9月，且當前在9月28日後，則報表年份 = 下一年
+                let reportYear;
+                if (currentMonth >= 9 && now.getDate() >= 28) {
+                    // 在9/28之後
+                    if (month >= 9) {
+                        reportYear = currentYear;  // 9-12月報表用當年
+                    } else {
+                        reportYear = currentYear + 1;  // 1-8月報表用下一年
+                    }
+                } else {
+                    // 在9/28之前
+                    if (month >= 9) {
+                        reportYear = currentYear - 1;  // 9-12月報表用去年
+                    } else {
+                        reportYear = currentYear;  // 1-8月報表用當年
+                    }
+                }
+                
+                // 根據報表年份選擇假日列表
+                let holidays;
+                if (reportYear === 2024) {
+                    holidays = holidays2024;
+                } else if (reportYear === 2025) {
+                    holidays = holidays2025;
+                } else if (reportYear === 2026) {
+                    holidays = holidays2026;
+                } else {
+                    // 預設使用2025年假日列表
+                    holidays = holidays2025;
+                }
+                
+                return holidays.some(h => h.month === month && h.day === day);
+            }
+            
+            // 計算合計
+            let totalSelf = 0;
+            let totalCounter = 0;
+            let totalAll = 0;
+            
+            store.dailyData.forEach(day => {
+                totalSelf += day.selfSales;
+                totalCounter += day.counterSales;
+                totalAll += day.totalSales;
+            });
+            
+            // 生成表格
+            let tableHTML = `
+                <table class="detail-table">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>星期</th>
+                            <th>自營</th>
+                            <th>專櫃</th>
+                            <th>合計</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            store.dailyData.forEach(day => {
+                // 判斷是否為假日：週六日或國定假日
+                const isWeekendHoliday = day.weekday === 'Sat' || day.weekday === 'Sun';
+                const isNationalHoliday = isTaiwanHoliday(day.date);
+                const isHoliday = isWeekendHoliday || isNationalHoliday;
+                const holidayClass = isHoliday ? ' class="holiday"' : '';
+                
+                tableHTML += `
+                    <tr>
+                        <td${holidayClass}>${day.date || ''}</td>
+                        <td${holidayClass}>${day.weekday || ''}</td>
+                        <td>${day.selfSales > 0 ? formatNumber(day.selfSales) : '0'}</td>
+                        <td>${day.counterSales > 0 ? formatNumber(day.counterSales) : '0'}</td>
+                        <td>${day.totalSales > 0 ? formatNumber(day.totalSales) : '0'}</td>
+                    </tr>
+                `;
+            });
+            
+            // 合計行
+            tableHTML += `
+                    <tr class="total-row">
+                        <td colspan="2">合計</td>
+                        <td>${formatNumber(totalSelf)}</td>
+                        <td>${formatNumber(totalCounter)}</td>
+                        <td>${formatNumber(totalAll)}</td>
+                    </tr>
+            `;
+            
+            // 本月目標行（使用實際數據）
+            const targetSelf = store.targetSelf || 0;
+            const targetCounter = store.targetCounter || 0;
+            tableHTML += `
+                    <tr>
+                        <td colspan="2">本月目標</td>
+                        <td>${targetSelf > 0 ? formatNumber(targetSelf) : '-'}</td>
+                        <td>${targetCounter > 0 ? formatNumber(targetCounter) : '-'}</td>
+                        <td>${store.targetPerformance > 0 ? formatNumber(store.targetPerformance) : '-'}</td>
+                    </tr>
+            `;
+            
+            // 達成率行
+            const achievementSelf = targetSelf > 0 ? (totalSelf / targetSelf) * 100 : 0;
+            const achievementCounter = targetCounter > 0 ? (totalCounter / targetCounter) * 100 : 0;
+            tableHTML += `
+                    <tr>
+                        <td colspan="2">達成率</td>
+                        <td class="${achievementSelf >= 100 ? 'positive-value' : 'negative-value'}">${targetSelf > 0 ? achievementSelf.toFixed(2) + '%' : '-'}</td>
+                        <td class="${achievementCounter >= 100 ? 'positive-value' : 'negative-value'}">${targetCounter > 0 ? achievementCounter.toFixed(2) + '%' : '-'}</td>
+                        <td class="${store.performanceRate >= 100 ? 'positive-value' : 'negative-value'}">${store.performanceRate.toFixed(2)}%</td>
+                    </tr>
+            `;
+            
+            // 去年本月實績行
+            if (store.lastYearPerformance && store.lastYearPerformance > 0) {
+                tableHTML += `
+                    <tr>
+                        <td colspan="2">去年本月實績</td>
+                        <td>${store.lastYearSelf > 0 ? formatNumber(store.lastYearSelf) : '-'}</td>
+                        <td>${store.lastYearCounter > 0 ? formatNumber(store.lastYearCounter) : '-'}</td>
+                        <td>${formatNumber(store.lastYearPerformance)}</td>
+                    </tr>
+                `;
+            }
+            
+            // 成長率行
+            if (store.growthRate !== undefined) {
+                tableHTML += `
+                    <tr>
+                        <td colspan="2">成長率</td>
+                        <td class="${store.growthRateSelf >= 0 ? 'positive-value' : 'negative-value'}">${store.growthRateSelf.toFixed(2)}%</td>
+                        <td class="${store.growthRateCounter >= 0 ? 'positive-value' : 'negative-value'}">${store.growthRateCounter.toFixed(2)}%</td>
+                        <td class="${store.growthRate >= 0 ? 'positive-value' : 'negative-value'}">${store.growthRate.toFixed(2)}%</td>
+                    </tr>
+                `;
+            }
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            modalBody.innerHTML = tableHTML;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('storeDetailModal');
+            modal.style.display = 'none';
+        }
+
+        // 點擊 modal 外部關閉
+        window.onclick = function(event) {
+            const modal = document.getElementById('storeDetailModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // 頁面加載完成後初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            // 計算並顯示當日財年信息
+            const fiscalInfo = calculateFiscalInfo();
+            const headerSubtitle = document.getElementById('headerSubtitle');
+            if (headerSubtitle) {
+                headerSubtitle.textContent = `FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.today}`;
+            }
+        });
+    </script>
+
+    <footer class="footer">
+        Created by Morio © 2025
+    </footer>
+</body>
+</html>
             padding: 0;
             box-sizing: border-box;
         }
