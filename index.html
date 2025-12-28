@@ -16,7 +16,7 @@
             font-family: 'Microsoft JhengHei', 'Arial', sans-serif;
             background: #1a1a1a;
             min-height: 100vh;
-            padding: 15px;
+            padding: 25px;
         }
 
         .container {
@@ -1453,7 +1453,7 @@
             
             // 計算總和
             const totals = {
-                name: currentRegion,
+                name: '總計',
                 currentPerformance: 0,
                 targetPerformance: 0,
                 grossMarginAmount: 0,
@@ -1601,7 +1601,7 @@
             
             html += `
                     <tr class="total-row">
-                        <td>${totals.name}總計</td>
+                        <td>總計</td>
                         <td>${formatNumber(totals.targetPerformance)}</td>
                         <td>${formatNumber(totals.currentPerformance)}</td>
                         <td class="${totalPerfRateClass}">${totals.performanceRate.toFixed(1)}%</td>
@@ -1875,7 +1875,7 @@
             // 添加總計行
             // 計算總計
             let totals = {
-                name: currentRegion,
+                name: '總計',
                 currentPerformance: 0,
                 targetPerformance: 0,
                 grossMarginAmount: 0,
@@ -1916,7 +1916,7 @@
             totals.marginRateDiff = totals.actualMarginRate - totals.estimatedMarginRate;
 
             const totalRow = [
-                `"${totals.name}總計"`,
+                "總計",
                 Math.round(totals.targetPerformance),
                 Math.round(totals.currentPerformance),
                 totals.performanceRate.toFixed(1) + '%',
