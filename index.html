@@ -669,7 +669,7 @@
         /* 平板樣式 (768px - 1024px) */
         @media (max-width: 1024px) and (min-width: 769px) {
             .container {
-                padding: 15px;
+                padding: 20px;
             }
 
             #headerSubtitle {
@@ -678,7 +678,7 @@
 
             .dashboard {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
+                gap: 20px;
             }
 
             .summary-table-container {
@@ -692,12 +692,16 @@
 
             .region-selector {
                 flex-wrap: wrap;
-                gap: 8px;
+                gap: 10px;
             }
 
             .region-btn {
-                padding: 8px 16px;
-                font-size: 0.9em;
+                padding: 10px 18px;
+                font-size: 0.95em;
+            }
+
+            .card {
+                padding: 20px;
             }
 
             .modal-content {
@@ -709,16 +713,16 @@
         /* 手機樣式 (最大 768px) */
         @media (max-width: 768px) {
             .container {
-                padding: 10px;
+                padding: 12px;
             }
 
             .header {
-                padding: 15px 10px;
+                padding: 18px 12px;
             }
 
             .dashboard {
                 grid-template-columns: 1fr;
-                gap: 15px;
+                gap: 18px;
             }
             
             h1 {
@@ -734,53 +738,54 @@
             /* 區域選擇器 */
             .region-selector {
                 flex-wrap: wrap;
-                gap: 6px;
-                padding: 10px;
+                gap: 8px;
+                padding: 12px;
             }
 
             .region-btn {
-                padding: 8px 12px;
-                font-size: 0.85em;
+                padding: 10px 14px;
+                font-size: 0.9em;
                 flex: 1 1 calc(33.333% - 6px);
-                min-width: 80px;
+                min-width: 85px;
             }
 
             /* 卡片樣式 */
             .card {
-                padding: 15px;
+                padding: 18px;
             }
 
             .store-name {
                 font-size: 1.3em;
-                margin-bottom: 12px;
-                padding-bottom: 8px;
+                margin-bottom: 14px;
+                padding-bottom: 10px;
             }
             
             .metric-row {
-                grid-template-columns: 100px 1fr;
-                gap: 8px;
+                grid-template-columns: 105px 1fr;
+                gap: 10px;
+                margin-bottom: 10px;
             }
             
             .metric-label {
-                font-size: 0.8em;
+                font-size: 0.85em;
             }
             
             .metric-value {
-                font-size: 0.95em;
+                font-size: 1em;
             }
             
             .percentage {
-                font-size: 0.65em;
-                padding: 2px 6px;
+                font-size: 0.7em;
+                padding: 3px 7px;
             }
 
             .amount {
-                font-size: 0.7em;
+                font-size: 0.75em;
             }
 
             .daily-target {
-                padding: 8px;
-                margin-top: 8px;
+                padding: 10px;
+                margin-top: 10px;
             }
 
             .daily-target-label,
@@ -893,6 +898,10 @@
 
         /* 小手機樣式 (最大 480px) */
         @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+
             h1 {
                 font-size: 1.3em;
                 padding: 12px;
@@ -902,18 +911,41 @@
                 font-size: 0.85em !important;
             }
 
+            .dashboard {
+                gap: 15px;
+            }
+
+            .region-selector {
+                padding: 10px;
+            }
+
             .region-btn {
                 flex: 1 1 calc(50% - 6px);
-                font-size: 0.8em;
-                padding: 6px 10px;
+                font-size: 0.85em;
+                padding: 8px 12px;
             }
 
             .card {
-                padding: 12px;
+                padding: 15px;
             }
 
             .store-name {
                 font-size: 1.2em;
+                margin-bottom: 12px;
+            }
+
+            .metric-row {
+                grid-template-columns: 95px 1fr;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+
+            .metric-label {
+                font-size: 0.8em;
+            }
+
+            .metric-value {
+                font-size: 0.95em;
             }
 
             .summary-table {
@@ -923,13 +955,13 @@
 
             .summary-table th,
             .summary-table td {
-                padding: 5px 3px;
+                padding: 6px 4px;
                 white-space: nowrap;
             }
 
             .csv-export-btn {
-                padding: 5px 10px;
-                font-size: 0.65em;
+                padding: 6px 12px;
+                font-size: 0.7em;
             }
 
             .modal-content {
