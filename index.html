@@ -374,6 +374,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 0.95em;
+            min-width: 1400px;
         }
 
         .summary-table th {
@@ -384,6 +385,7 @@
             font-weight: 600;
             border: 1px solid #3d3d3d;
             font-size: 0.9em;
+            white-space: nowrap;
         }
 
         .summary-table td {
@@ -391,6 +393,7 @@
             text-align: right;
             border: 1px solid #3d3d3d;
             color: #e0e0e0;
+            white-space: nowrap;
         }
 
         .summary-table td:first-child {
@@ -684,7 +687,7 @@
             }
 
             .summary-table {
-                min-width: 1000px;
+                min-width: 1400px;
             }
 
             .region-selector {
@@ -825,13 +828,14 @@
             /* 表格可橫向滾動 */
             .summary-table {
                 font-size: 0.7em;
-                min-width: 1000px;
+                min-width: 1400px;
                 display: table;
             }
 
             .summary-table th,
             .summary-table td {
                 padding: 6px 4px;
+                white-space: nowrap;
             }
 
             .scroll-hint {
@@ -914,12 +918,13 @@
 
             .summary-table {
                 font-size: 0.65em;
-                min-width: 950px;
+                min-width: 1400px;
             }
 
             .summary-table th,
             .summary-table td {
                 padding: 5px 3px;
+                white-space: nowrap;
             }
 
             .csv-export-btn {
