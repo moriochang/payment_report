@@ -1083,12 +1083,13 @@
             'MTN[i]store': '89',
             'MOP台中[i]store': '77',
             'XBM[i]store': '97',
-            'skm online': '820'
+            'skm online': '820',
+            '線上商場': '821'
         };
 
         // 區域定義
         const regionConfig = {
-            '全社': ['45', '47', '48', '51', '57', '61', '65', '75', '76', '77', '81', '84', '86', '88', '89', '97', '115', '116', '117', '820'],
+            '全社': ['45', '47', '48', '51', '57', '61', '65', '75', '76', '77', '81', '84', '86', '88', '89', '97', '115', '116', '117', '820', '821'],
             '北一區': ['45', '47', '48'],
             '北二區': ['51', '57', '61', '65'],
             '中區': ['75', '76', '77', '81', '84'],
@@ -1259,10 +1260,29 @@
                             
                             // 驗證是否為合計列
                             if (rowIdx + 1 < data.length) {
-                                for (let c = colIdx; c < Math.min(colIdx + 5, data[rowIdx + 1].length); c++) {
+                                // 擴大搜索範圍到10列
+                                for (let c = colIdx; c < Math.min(colIdx + 10, data[rowIdx + 1].length); c++) {
                                     if (data[rowIdx + 1][c] === '合計') {
                                         totalCol = c;
                                         break;
+                                    }
+                                }
+                            }
+                            
+                            // 特殊處理：針對線上商場(821)和skm online(820)，驗證業績數據位置
+                            let isOnlineStore = (cell === '線上商場' || cell === 'skm online');
+                            if (isOnlineStore) {
+                                if (keyRows.total) {
+                                    const totalColValue = parseFloat(data[keyRows.total][totalCol]);
+                                    if (isNaN(totalColValue) || totalColValue === 0) {
+                                        // 檢查右側1-3列
+                                        for (let c = totalCol + 1; c < Math.min(totalCol + 4, data[keyRows.total].length); c++) {
+                                            const val = parseFloat(data[keyRows.total][c]);
+                                            if (!isNaN(val) && val !== 0) {
+                                                totalCol = c;
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -1286,7 +1306,11 @@
                             let marginCol = totalCol;
                             let foundMargin = false;
                             
-                            if (keyRows.marginAmount) {
+                            // 特殊處理：線上商場的預估毛利數據在totalCol+1
+                            if (isOnlineStore) {
+                                marginCol = totalCol + 1;
+                                foundMargin = true;
+                            } else if (keyRows.marginAmount) {
                                 // 先檢查合計列本身
                                 const totalColMargin = parseFloat(data[keyRows.marginAmount][totalCol]);
                                 if (!isNaN(totalColMargin) && Math.abs(totalColMargin) > 10) {
@@ -1368,7 +1392,20 @@
                     
                     // 提取數據
                     const currentPerformance = parseFloat(data[keyRows.total][col]) || 0;
-                    const targetPerformance = parseFloat(data[keyRows.target][col]) || 0;
+                    
+                    // 特殊處理：線上商場(821)和skm online(820)的目標業績可能是merged cell
+                    // 從selfCol讀取以避免merged cell問題
+                    let targetPerformance;
+                    if (storeName === '820' || storeName === '821') {
+                        targetPerformance = targetSelf + targetCounter; // 自營+專櫃
+                        if (targetPerformance === 0) {
+                            // 如果計算結果為0，嘗試從col讀取
+                            targetPerformance = parseFloat(data[keyRows.target][col]) || 0;
+                        }
+                    } else {
+                        targetPerformance = parseFloat(data[keyRows.target][col]) || 0;
+                    }
+                    
                     const grossMarginTarget = keyRows.marginTarget ? (parseFloat(data[keyRows.marginTarget][marginCol]) || 0) : 0;
                     const grossMarginRate = keyRows.marginRate ? (parseFloat(data[keyRows.marginRate][marginCol]) || 0) : 0;
                     const grossMarginAmount = keyRows.marginAmount ? (parseFloat(data[keyRows.marginAmount][marginCol]) || 0) : 0;
@@ -1517,18 +1554,16 @@
             totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
             totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
             
-            // 計算預估毛利率（加權平均）
-            let totalEstimatedMargin = 0;
+            // 計算預估毛利率：總計預估毛利額 / 總計目標業績
+            totals.estimatedMarginRate = totals.targetPerformance > 0 ? (totals.grossMarginTarget / totals.targetPerformance) * 100 : 0;
+            
+            // 計算實際毛利率（加權平均，基於當前業績）
             let totalActualMargin = 0;
             results.forEach(store => {
-                if (store.estimatedMarginRate !== 0 && store.currentPerformance > 0) {
-                    totalEstimatedMargin += (store.estimatedMarginRate / 100) * store.currentPerformance;
-                }
                 if (store.actualMarginRate !== 0 && store.currentPerformance > 0) {
                     totalActualMargin += (store.actualMarginRate / 100) * store.currentPerformance;
                 }
             });
-            totals.estimatedMarginRate = totals.currentPerformance > 0 ? (totalEstimatedMargin / totals.currentPerformance) * 100 : 0;
             totals.actualMarginRate = totals.currentPerformance > 0 ? (totalActualMargin / totals.currentPerformance) * 100 : 0;
             totals.marginRateDiff = totals.actualMarginRate - totals.estimatedMarginRate;
             
@@ -1931,19 +1966,16 @@
             totals.marginRate = totals.grossMarginTarget > 0 ? (totals.grossMarginAmount / totals.grossMarginTarget) * 100 : 0;
             totals.grossMarginRate = totals.currentPerformance > 0 ? (totals.grossMarginAmount / totals.currentPerformance) * 100 : 0;
 
-            // 計算毛利率（加權平均）
-            let totalEstimatedMargin = 0;
+            // 計算預估毛利率：總計預估毛利額 / 總計目標業績
+            totals.estimatedMarginRate = totals.targetPerformance > 0 ? (totals.grossMarginTarget / totals.targetPerformance) * 100 : 0;
+            
+            // 計算實際毛利率（加權平均，基於當前業績）
             let totalActualMargin = 0;
             currentDisplayResults.forEach(store => {
-                if (store.estimatedMarginRate !== 0 && store.currentPerformance > 0) {
-                    totalEstimatedMargin += (store.estimatedMarginRate / 100) * store.currentPerformance;
-                }
                 if (store.actualMarginRate !== 0 && store.currentPerformance > 0) {
                     totalActualMargin += (store.actualMarginRate / 100) * store.currentPerformance;
                 }
             });
-
-            totals.estimatedMarginRate = totals.currentPerformance > 0 ? (totalEstimatedMargin / totals.currentPerformance) * 100 : 0;
             totals.actualMarginRate = totals.currentPerformance > 0 ? (totalActualMargin / totals.currentPerformance) * 100 : 0;
             totals.marginRateDiff = totals.actualMarginRate - totals.estimatedMarginRate;
 
