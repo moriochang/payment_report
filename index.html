@@ -1506,7 +1506,7 @@
             currentDisplayResults = results;
             
             // 計算財年信息
-            const fiscalInfo = calculateFiscalInfo(reportDate);
+            const fiscalInfo = calculateFiscalInfo(currentReportDate);
             
             // 為每個店家計算每日目標（100%和110%）或月底差額
             results.forEach(store => {
@@ -1617,7 +1617,7 @@
             displayDateInfo(fiscalInfo);
             
             // 生成表格
-            generateSummaryTable(results, totals);
+            generateSummaryTable(results, totals, fiscalInfo);
             
             // 先顯示總和卡片
             createStoreCard(totals, true, fiscalInfo);
@@ -1644,7 +1644,7 @@
             `;
         }
 
-        function generateSummaryTable(results, totals) {
+        function generateSummaryTable(results, totals, fiscalInfo) {
             const tableContent = document.getElementById('summaryTableContent');
             
             // 根據剩餘天數決定表頭文字
@@ -1704,8 +1704,8 @@
                         <td class="neutral-value">${store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="neutral-value">${store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="${store.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${store.marginRateDiff !== 0 ? (store.marginRateDiff >= 0 ? '+' : '') + store.marginRateDiff.toFixed(2) + '%' : '-'}</td>
-                        <td class="neutral-value">${fiscalInfo.remainingDays > 0 ? (store.dailyTarget100 > 0 ? formatNumber(store.dailyTarget100) : '-') : (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? formatNumber(store.finalGap100) : '已達成') : '-')}</td>
-                        <td class="neutral-value">${fiscalInfo.remainingDays > 0 ? (store.dailyTarget110 > 0 ? formatNumber(store.dailyTarget110) : '-') : (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? formatNumber(store.finalGap110) : '已達成') : '-')}</td>
+                        <td class="neutral-value">${fiscalInfo.remainingDays > 0 ? (store.dailyTarget100 > 0 ? formatNumber(store.dailyTarget100) : '-') : (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? formatNumber(store.finalGap100) : '✅') : '-')}</td>
+                        <td class="neutral-value">${fiscalInfo.remainingDays > 0 ? (store.dailyTarget110 > 0 ? formatNumber(store.dailyTarget110) : '-') : (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? formatNumber(store.finalGap110) : '✅') : '-')}</td>
                     </tr>
                 `;
             });
@@ -1730,8 +1730,8 @@
                         <td>${totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td>${totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="${totals.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${totals.marginRateDiff !== 0 ? (totals.marginRateDiff >= 0 ? '+' : '') + totals.marginRateDiff.toFixed(2) + '%' : '-'}</td>
-                        <td>${fiscalInfo.remainingDays > 0 ? (totals.dailyTarget100 > 0 ? formatNumber(totals.dailyTarget100) : '-') : (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? formatNumber(totals.finalGap100) : '已達成') : '-')}</td>
-                        <td>${fiscalInfo.remainingDays > 0 ? (totals.dailyTarget110 > 0 ? formatNumber(totals.dailyTarget110) : '-') : (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? formatNumber(totals.finalGap110) : '已達成') : '-')}</td>
+                        <td>${fiscalInfo.remainingDays > 0 ? (totals.dailyTarget100 > 0 ? formatNumber(totals.dailyTarget100) : '-') : (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? formatNumber(totals.finalGap100) : '✅') : '-')}</td>
+                        <td>${fiscalInfo.remainingDays > 0 ? (totals.dailyTarget110 > 0 ? formatNumber(totals.dailyTarget110) : '-') : (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? formatNumber(totals.finalGap110) : '✅') : '-')}</td>
                     </tr>
                 </tbody>
             `;
@@ -1985,10 +1985,10 @@
                     store.marginRateDiff !== 0 ? store.marginRateDiff.toFixed(2) + '%' : '',
                     fiscalInfo.remainingDays > 0 ? 
                         (store.dailyTarget100 > 0 ? Math.round(store.dailyTarget100) : '') :
-                        (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? Math.round(store.finalGap100) : '已達成') : ''),
+                        (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? Math.round(store.finalGap100) : '✅') : ''),
                     fiscalInfo.remainingDays > 0 ? 
                         (store.dailyTarget110 > 0 ? Math.round(store.dailyTarget110) : '') :
-                        (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? Math.round(store.finalGap110) : '已達成') : '')
+                        (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? Math.round(store.finalGap110) : '✅') : '')
                 ];
                 csvContent += row.join(',') + '\n';
             });
@@ -2052,10 +2052,10 @@
                 totals.marginRateDiff !== 0 ? totals.marginRateDiff.toFixed(2) + '%' : '',
                 fiscalInfo.remainingDays > 0 ? 
                     (totals.dailyTarget100 > 0 ? Math.round(totals.dailyTarget100) : '') :
-                    (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? Math.round(totals.finalGap100) : '已達成') : ''),
+                    (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? Math.round(totals.finalGap100) : '✅') : ''),
                 fiscalInfo.remainingDays > 0 ? 
                     (totals.dailyTarget110 > 0 ? Math.round(totals.dailyTarget110) : '') :
-                    (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? Math.round(totals.finalGap110) : '已達成') : '')
+                    (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? Math.round(totals.finalGap110) : '✅') : '')
             ];
             csvContent += totalRow.join(',') + '\n';
 
