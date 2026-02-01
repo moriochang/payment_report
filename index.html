@@ -1926,10 +1926,12 @@
                 return;
             }
 
-            // CSV專用的數字格式化函數（加上千位分隔符）
+            // CSV專用的數字格式化函數（加上千位分隔符並用引號包起來）
             const formatNumberForCSV = (num) => {
                 if (num === null || num === undefined) return '';
-                return Math.round(num).toLocaleString('zh-TW');
+                const formatted = Math.round(num).toLocaleString('zh-TW');
+                // 如果包含逗號，用引號包起來
+                return formatted.includes(',') ? `"${formatted}"` : formatted;
             };
 
             // 計算財年信息和剩餘天數
