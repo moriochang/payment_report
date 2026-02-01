@@ -1926,6 +1926,12 @@
                 return;
             }
 
+            // CSV專用的數字格式化函數（加上千位分隔符）
+            const formatNumberForCSV = (num) => {
+                if (num === null || num === undefined) return '';
+                return Math.round(num).toLocaleString('zh-TW');
+            };
+
             // 計算財年信息和剩餘天數
             const fiscalInfo = calculateFiscalInfo(currentReportDate);
             
@@ -1969,23 +1975,23 @@
             currentDisplayResults.forEach(store => {
                 const row = [
                     `"${store.name}"`,
-                    Math.round(store.targetPerformance),
-                    Math.round(store.currentPerformance),
+                    formatNumberForCSV(store.targetPerformance),
+                    formatNumberForCSV(store.currentPerformance),
                     store.performanceRate.toFixed(1) + '%',
-                    Math.round(store.performanceDiff),
-                    store.grossMarginTarget > 0 ? Math.round(store.grossMarginTarget) : '',
-                    store.grossMarginAmount !== 0 ? Math.round(store.grossMarginAmount) : '',
+                    formatNumberForCSV(store.performanceDiff),
+                    store.grossMarginTarget > 0 ? formatNumberForCSV(store.grossMarginTarget) : '',
+                    store.grossMarginAmount !== 0 ? formatNumberForCSV(store.grossMarginAmount) : '',
                     store.grossMarginTarget > 0 ? store.marginRate.toFixed(1) + '%' : '',
-                    store.grossMarginTarget > 0 ? Math.round(store.marginDiff) : '',
+                    store.grossMarginTarget > 0 ? formatNumberForCSV(store.marginDiff) : '',
                     store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '',
                     store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '',
                     store.marginRateDiff !== 0 ? store.marginRateDiff.toFixed(2) + '%' : '',
                     fiscalInfo.remainingDays > 0 ? 
-                        (store.dailyTarget100 > 0 ? Math.round(store.dailyTarget100) : '') :
-                        (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? Math.round(store.finalGap100) : '✅') : ''),
+                        (store.dailyTarget100 > 0 ? formatNumberForCSV(store.dailyTarget100) : '') :
+                        (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? formatNumberForCSV(store.finalGap100) : '✅') : ''),
                     fiscalInfo.remainingDays > 0 ? 
-                        (store.dailyTarget110 > 0 ? Math.round(store.dailyTarget110) : '') :
-                        (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? Math.round(store.finalGap110) : '✅') : '')
+                        (store.dailyTarget110 > 0 ? formatNumberForCSV(store.dailyTarget110) : '') :
+                        (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? formatNumberForCSV(store.finalGap110) : '✅') : '')
                 ];
                 csvContent += row.join(',') + '\n';
             });
@@ -2036,23 +2042,23 @@
 
             const totalRow = [
                 "總計",
-                Math.round(totals.targetPerformance),
-                Math.round(totals.currentPerformance),
+                formatNumberForCSV(totals.targetPerformance),
+                formatNumberForCSV(totals.currentPerformance),
                 totals.performanceRate.toFixed(1) + '%',
-                Math.round(totals.performanceDiff),
-                Math.round(totals.grossMarginTarget),
-                Math.round(totals.grossMarginAmount),
+                formatNumberForCSV(totals.performanceDiff),
+                formatNumberForCSV(totals.grossMarginTarget),
+                formatNumberForCSV(totals.grossMarginAmount),
                 totals.marginRate.toFixed(1) + '%',
-                Math.round(totals.marginDiff),
+                formatNumberForCSV(totals.marginDiff),
                 totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '',
                 totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '',
                 totals.marginRateDiff !== 0 ? totals.marginRateDiff.toFixed(2) + '%' : '',
                 fiscalInfo.remainingDays > 0 ? 
-                    (totals.dailyTarget100 > 0 ? Math.round(totals.dailyTarget100) : '') :
-                    (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? Math.round(totals.finalGap100) : '✅') : ''),
+                    (totals.dailyTarget100 > 0 ? formatNumberForCSV(totals.dailyTarget100) : '') :
+                    (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? formatNumberForCSV(totals.finalGap100) : '✅') : ''),
                 fiscalInfo.remainingDays > 0 ? 
-                    (totals.dailyTarget110 > 0 ? Math.round(totals.dailyTarget110) : '') :
-                    (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? Math.round(totals.finalGap110) : '✅') : '')
+                    (totals.dailyTarget110 > 0 ? formatNumberForCSV(totals.dailyTarget110) : '') :
+                    (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? formatNumberForCSV(totals.finalGap110) : '✅') : '')
             ];
             csvContent += totalRow.join(',') + '\n';
 
