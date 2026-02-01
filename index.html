@@ -1061,6 +1061,7 @@
         let allStoresData = [];
         let currentRegion = '全社';
         let currentDisplayResults = []; // 存儲當前顯示的店家結果，供 modal 使用
+        let currentReportDate = null; // 存儲報表日期
 
         // 店家配置：店名 -> 顯示名稱（代號）
         const storeConfig = {
@@ -1114,8 +1115,9 @@
         });
 
         // 財年計算函數
-        function calculateFiscalInfo() {
-            const today = new Date();
+        function calculateFiscalInfo(reportDate) {
+            // 如果沒有提供reportDate，使用當前日期
+            const today = reportDate || new Date();
             const yesterday = new Date(today);
             yesterday.setDate(yesterday.getDate() - 1);
             
@@ -1148,9 +1150,10 @@
             const daysInQuarter = daysSinceFYStart % 91;
             const weekInQuarter = Math.floor(daysInQuarter / 7) + 1;
             
-            // 計算本月剩餘天數（包含今日）
+            // 計算本月剩餘天數（不包含報表當日）
+            // 如果報表是月底最後一天，剩餘天數為0
             const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            const remainingDays = lastDayOfMonth.getDate() - today.getDate() + 1;
+            const remainingDays = lastDayOfMonth.getDate() - today.getDate();
             
             // 格式化日期
             const formatDate = (date) => {
@@ -1202,6 +1205,17 @@
                 return;
             }
 
+            // 從檔名提取日期 (格式: YYYYMMDD_立展_各店業績比較表.xlsx)
+            let reportDate = null;
+            const dateMatch = file.name.match(/^(\d{8})/);
+            if (dateMatch) {
+                const dateStr = dateMatch[1];
+                const year = parseInt(dateStr.substring(0, 4));
+                const month = parseInt(dateStr.substring(4, 6)) - 1; // JavaScript月份從0開始
+                const day = parseInt(dateStr.substring(6, 8));
+                reportDate = new Date(year, month, day);
+            }
+
             loading.style.display = 'block';
             dashboard.style.display = 'none';
             errorMessage.style.display = 'none';
@@ -1214,7 +1228,7 @@
                     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                     
-                    processData(jsonData);
+                    processData(jsonData, reportDate);
                 } catch (error) {
                     showError('檔案讀取失敗：' + error.message);
                     loading.style.display = 'none';
@@ -1223,8 +1237,11 @@
             reader.readAsArrayBuffer(file);
         }
 
-        function processData(data) {
+        function processData(data, reportDate) {
             try {
+                // 儲存報表日期到全局變量
+                currentReportDate = reportDate;
+                
                 // ========== 步驟1：動態查找關鍵行的位置 ==========
                 const keyRows = {};
                 for (let i = 0; i < data.length; i++) {
@@ -1489,35 +1506,60 @@
             currentDisplayResults = results;
             
             // 計算財年信息
-            const fiscalInfo = calculateFiscalInfo();
+            const fiscalInfo = calculateFiscalInfo(reportDate);
             
-            // 為每個店家計算每日目標（100%和110%）
+            // 為每個店家計算每日目標（100%和110%）或月底差額
             results.forEach(store => {
                 let dailyTarget100 = 0;
                 let dailyTarget110 = 0;
+                let finalGap100 = 0; // 月底差額（100%目標）
+                let finalGap110 = 0; // 月底差額（110%目標）
                 
-                if (store.grossMarginTarget > 0 && store.grossMarginRate > 0 && fiscalInfo.remainingDays > 0) {
-                    // 100% 目標計算
+                if (fiscalInfo.remainingDays > 0) {
+                    // 剩餘天數 > 0：計算每日應做業績
+                    if (store.grossMarginTarget > 0 && store.grossMarginRate > 0) {
+                        const performanceGap100 = store.targetPerformance - store.currentPerformance;
+                        const dailyTargetByPerformance100 = (performanceGap100 / fiscalInfo.remainingDays) * 1.05;
+                        
+                        const marginGap100 = store.grossMarginTarget - store.grossMarginAmount;
+                        const dailyTargetByMargin100 = (marginGap100 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        
+                        dailyTarget100 = Math.max(dailyTargetByPerformance100, dailyTargetByMargin100);
+                        
+                        // 110% 目標計算
+                        const performanceGap110 = (store.targetPerformance * 1.1) - store.currentPerformance;
+                        const dailyTargetByPerformance110 = (performanceGap110 / fiscalInfo.remainingDays) * 1.05;
+                        
+                        const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                        const dailyTargetByMargin110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
+                        
+                        dailyTarget110 = Math.max(dailyTargetByPerformance110, dailyTargetByMargin110);
+                    }
+                } else {
+                    // 剩餘天數 = 0：計算月底差額（目標 - 當前）
+                    // 100%目標差額
                     const performanceGap100 = store.targetPerformance - store.currentPerformance;
-                    const dailyTargetByPerformance100 = (performanceGap100 / fiscalInfo.remainingDays) * 1.05;
+                    if (store.grossMarginTarget > 0 && store.grossMarginRate > 0) {
+                        const marginGap100 = store.grossMarginTarget - store.grossMarginAmount;
+                        finalGap100 = Math.max(performanceGap100, marginGap100);
+                    } else {
+                        finalGap100 = performanceGap100;
+                    }
                     
-                    const marginGap100 = store.grossMarginTarget - store.grossMarginAmount;
-                    const dailyTargetByMargin100 = (marginGap100 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
-                    
-                    dailyTarget100 = Math.max(dailyTargetByPerformance100, dailyTargetByMargin100);
-                    
-                    // 110% 目標計算
+                    // 110%目標差額
                     const performanceGap110 = (store.targetPerformance * 1.1) - store.currentPerformance;
-                    const dailyTargetByPerformance110 = (performanceGap110 / fiscalInfo.remainingDays) * 1.05;
-                    
-                    const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
-                    const dailyTargetByMargin110 = (marginGap110 / (store.grossMarginRate / 100)) * 1.05 / fiscalInfo.remainingDays;
-                    
-                    dailyTarget110 = Math.max(dailyTargetByPerformance110, dailyTargetByMargin110);
+                    if (store.grossMarginTarget > 0 && store.grossMarginRate > 0) {
+                        const marginGap110 = (store.grossMarginTarget * 1.1) - store.grossMarginAmount;
+                        finalGap110 = Math.max(performanceGap110, marginGap110);
+                    } else {
+                        finalGap110 = performanceGap110;
+                    }
                 }
                 
                 store.dailyTarget100 = dailyTarget100;
                 store.dailyTarget110 = dailyTarget110;
+                store.finalGap100 = finalGap100;
+                store.finalGap110 = finalGap110;
             });
             
             // 計算總和
@@ -1536,7 +1578,9 @@
                 actualMarginRate: 0,
                 marginRateDiff: 0,
                 dailyTarget100: 0,
-                dailyTarget110: 0
+                dailyTarget110: 0,
+                finalGap100: 0,
+                finalGap110: 0
             };
             
             results.forEach(store => {
@@ -1546,6 +1590,8 @@
                 totals.grossMarginTarget += store.grossMarginTarget;
                 totals.dailyTarget100 += store.dailyTarget100;
                 totals.dailyTarget110 += store.dailyTarget110;
+                totals.finalGap100 += store.finalGap100;
+                totals.finalGap110 += store.finalGap110;
             });
             
             totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
@@ -1601,6 +1647,10 @@
         function generateSummaryTable(results, totals) {
             const tableContent = document.getElementById('summaryTableContent');
             
+            // 根據剩餘天數決定表頭文字
+            const target100Header = fiscalInfo.remainingDays > 0 ? '100%含稅每日' : '100%目標差額';
+            const target110Header = fiscalInfo.remainingDays > 0 ? '110%含稅每日' : '110%目標差額';
+            
             let html = `
                 <thead>
                     <tr>
@@ -1616,8 +1666,8 @@
                         <th>預估毛利率</th>
                         <th>實際毛利率</th>
                         <th>毛利率差異</th>
-                        <th>100%含稅每日</th>
-                        <th>110%含稅每日</th>
+                        <th>${target100Header}</th>
+                        <th>${target110Header}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1654,8 +1704,8 @@
                         <td class="neutral-value">${store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="neutral-value">${store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="${store.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${store.marginRateDiff !== 0 ? (store.marginRateDiff >= 0 ? '+' : '') + store.marginRateDiff.toFixed(2) + '%' : '-'}</td>
-                        <td class="neutral-value">${store.dailyTarget100 > 0 ? formatNumber(store.dailyTarget100) : '-'}</td>
-                        <td class="neutral-value">${store.dailyTarget110 > 0 ? formatNumber(store.dailyTarget110) : '-'}</td>
+                        <td class="neutral-value">${fiscalInfo.remainingDays > 0 ? (store.dailyTarget100 > 0 ? formatNumber(store.dailyTarget100) : '-') : (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? formatNumber(store.finalGap100) : '已達成') : '-')}</td>
+                        <td class="neutral-value">${fiscalInfo.remainingDays > 0 ? (store.dailyTarget110 > 0 ? formatNumber(store.dailyTarget110) : '-') : (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? formatNumber(store.finalGap110) : '已達成') : '-')}</td>
                     </tr>
                 `;
             });
@@ -1680,8 +1730,8 @@
                         <td>${totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td>${totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '-'}</td>
                         <td class="${totals.marginRateDiff >= 0 ? 'positive-value' : 'negative-value'}">${totals.marginRateDiff !== 0 ? (totals.marginRateDiff >= 0 ? '+' : '') + totals.marginRateDiff.toFixed(2) + '%' : '-'}</td>
-                        <td>${totals.dailyTarget100 > 0 ? formatNumber(totals.dailyTarget100) : '-'}</td>
-                        <td>${totals.dailyTarget110 > 0 ? formatNumber(totals.dailyTarget110) : '-'}</td>
+                        <td>${fiscalInfo.remainingDays > 0 ? (totals.dailyTarget100 > 0 ? formatNumber(totals.dailyTarget100) : '-') : (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? formatNumber(totals.finalGap100) : '已達成') : '-')}</td>
+                        <td>${fiscalInfo.remainingDays > 0 ? (totals.dailyTarget110 > 0 ? formatNumber(totals.dailyTarget110) : '-') : (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? formatNumber(totals.finalGap110) : '已達成') : '-')}</td>
                     </tr>
                 </tbody>
             `;
@@ -1886,7 +1936,7 @@
             const day = yesterday.getDate();
             
             // 計算財年信息和剩餘天數
-            const fiscalInfo = calculateFiscalInfo();
+            const fiscalInfo = calculateFiscalInfo(currentReportDate);
             
             // 獲取當前區域
             const currentRegion = document.querySelector('.region-btn.active').dataset.region;
@@ -1905,8 +1955,8 @@
                 '預估毛利率',
                 '實際毛利率',
                 '毛利率差異',
-                '100%含稅每日',
-                '110%含稅每日'
+                fiscalInfo.remainingDays > 0 ? '100%含稅每日' : '100%目標差額',
+                fiscalInfo.remainingDays > 0 ? '110%含稅每日' : '110%目標差額'
             ];
 
             // 構建CSV內容
@@ -1933,8 +1983,12 @@
                     store.estimatedMarginRate !== 0 ? store.estimatedMarginRate.toFixed(2) + '%' : '',
                     store.actualMarginRate !== 0 ? store.actualMarginRate.toFixed(2) + '%' : '',
                     store.marginRateDiff !== 0 ? store.marginRateDiff.toFixed(2) + '%' : '',
-                    store.dailyTarget100 > 0 ? Math.round(store.dailyTarget100) : '',
-                    store.dailyTarget110 > 0 ? Math.round(store.dailyTarget110) : ''
+                    fiscalInfo.remainingDays > 0 ? 
+                        (store.dailyTarget100 > 0 ? Math.round(store.dailyTarget100) : '') :
+                        (store.finalGap100 !== 0 ? (store.finalGap100 > 0 ? Math.round(store.finalGap100) : '已達成') : ''),
+                    fiscalInfo.remainingDays > 0 ? 
+                        (store.dailyTarget110 > 0 ? Math.round(store.dailyTarget110) : '') :
+                        (store.finalGap110 !== 0 ? (store.finalGap110 > 0 ? Math.round(store.finalGap110) : '已達成') : '')
                 ];
                 csvContent += row.join(',') + '\n';
             });
@@ -1948,7 +2002,9 @@
                 grossMarginAmount: 0,
                 grossMarginTarget: 0,
                 dailyTarget100: 0,
-                dailyTarget110: 0
+                dailyTarget110: 0,
+                finalGap100: 0,
+                finalGap110: 0
             };
 
             currentDisplayResults.forEach(store => {
@@ -1958,6 +2014,8 @@
                 totals.grossMarginTarget += store.grossMarginTarget;
                 totals.dailyTarget100 += store.dailyTarget100;
                 totals.dailyTarget110 += store.dailyTarget110;
+                totals.finalGap100 += store.finalGap100;
+                totals.finalGap110 += store.finalGap110;
             });
 
             totals.performanceDiff = totals.currentPerformance - totals.targetPerformance;
@@ -1992,8 +2050,12 @@
                 totals.estimatedMarginRate !== 0 ? totals.estimatedMarginRate.toFixed(2) + '%' : '',
                 totals.actualMarginRate !== 0 ? totals.actualMarginRate.toFixed(2) + '%' : '',
                 totals.marginRateDiff !== 0 ? totals.marginRateDiff.toFixed(2) + '%' : '',
-                totals.dailyTarget100 > 0 ? Math.round(totals.dailyTarget100) : '',
-                totals.dailyTarget110 > 0 ? Math.round(totals.dailyTarget110) : ''
+                fiscalInfo.remainingDays > 0 ? 
+                    (totals.dailyTarget100 > 0 ? Math.round(totals.dailyTarget100) : '') :
+                    (totals.finalGap100 !== 0 ? (totals.finalGap100 > 0 ? Math.round(totals.finalGap100) : '已達成') : ''),
+                fiscalInfo.remainingDays > 0 ? 
+                    (totals.dailyTarget110 > 0 ? Math.round(totals.dailyTarget110) : '') :
+                    (totals.finalGap110 !== 0 ? (totals.finalGap110 > 0 ? Math.round(totals.finalGap110) : '已達成') : '')
             ];
             csvContent += totalRow.join(',') + '\n';
 
