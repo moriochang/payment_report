@@ -1116,13 +1116,14 @@
 
         // 財年計算函數
         function calculateFiscalInfo(reportDate) {
-            // 如果沒有提供reportDate，使用當前日期
-            const today = reportDate || new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
+            // 當前系統日期（用於顯示今天是幾號）
+            const currentDate = new Date();
             
-            // 財年從每年9月28日開始
-            const currentYear = today.getFullYear();
+            // 報表日期（用於計算剩餘天數和顯示累計至）
+            const reportDateObj = reportDate || currentDate;
+            
+            // 使用當前日期計算財年、季度、週數
+            const currentYear = currentDate.getFullYear();
             const fyStartMonth = 8; // 9月 (0-indexed)
             const fyStartDay = 28;
             
@@ -1130,7 +1131,7 @@
             let fiscalYear;
             let fyStartDate;
             
-            if (today.getMonth() > fyStartMonth || (today.getMonth() === fyStartMonth && today.getDate() >= fyStartDay)) {
+            if (currentDate.getMonth() > fyStartMonth || (currentDate.getMonth() === fyStartMonth && currentDate.getDate() >= fyStartDay)) {
                 // 在9/28之後，屬於下一財年
                 fiscalYear = currentYear + 1;
                 fyStartDate = new Date(currentYear, fyStartMonth, fyStartDay);
@@ -1141,7 +1142,7 @@
             }
             
             // 計算從財年開始到今天的天數
-            const daysSinceFYStart = Math.floor((today - fyStartDate) / (1000 * 60 * 60 * 24));
+            const daysSinceFYStart = Math.floor((currentDate - fyStartDate) / (1000 * 60 * 60 * 24));
             
             // 計算季度 (每季13週 = 91天)
             const quarter = Math.floor(daysSinceFYStart / 91) + 1;
@@ -1150,10 +1151,9 @@
             const daysInQuarter = daysSinceFYStart % 91;
             const weekInQuarter = Math.floor(daysInQuarter / 7) + 1;
             
-            // 計算本月剩餘天數（不包含報表當日）
-            // 如果報表是月底最後一天，剩餘天數為0
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            const remainingDays = lastDayOfMonth.getDate() - today.getDate();
+            // 使用報表日期計算剩餘天數
+            const lastDayOfMonth = new Date(reportDateObj.getFullYear(), reportDateObj.getMonth() + 1, 0);
+            const remainingDays = lastDayOfMonth.getDate() - reportDateObj.getDate();
             
             // 格式化日期
             const formatDate = (date) => {
@@ -1166,10 +1166,10 @@
                 fiscalYear: String(fiscalYear).slice(-2), // FY26 -> 26
                 quarter: quarter,
                 week: weekInQuarter,
-                today: formatDate(today),  // 今日
-                yesterday: formatDate(yesterday),  // 昨日
-                remainingDays: remainingDays,
-                currentMonth: today.getMonth() + 1
+                currentDate: formatDate(currentDate),  // 當前日期（今天）
+                reportDate: formatDate(reportDateObj),  // 報表日期（累計至）
+                remainingDays: remainingDays,  // 基於報表日期計算
+                currentMonth: reportDateObj.getMonth() + 1
             };
         }
 
@@ -1636,10 +1636,10 @@
             const dateInfoDiv = document.getElementById('dateInfo');
             dateInfoDiv.innerHTML = `
                 <div class="main-date">
-                    📅 FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.today}
+                    📅 FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.currentDate}
                 </div>
                 <div class="sub-date">
-                    累計至昨日 ${fiscalInfo.yesterday}　本月剩餘天數：${fiscalInfo.remainingDays} 天
+                    累計至 ${fiscalInfo.reportDate}　本月剩餘天數：${fiscalInfo.remainingDays} 天
                 </div>
             `;
         }
@@ -1926,17 +1926,14 @@
                 return;
             }
 
-            // 使用昨天的日期
-            const now = new Date();
-            const yesterday = new Date(now);
-            yesterday.setDate(yesterday.getDate() - 1);
-            
-            const year = yesterday.getFullYear();
-            const month = yesterday.getMonth() + 1;
-            const day = yesterday.getDate();
-            
             // 計算財年信息和剩餘天數
             const fiscalInfo = calculateFiscalInfo(currentReportDate);
+            
+            // 從報表日期取得年月日
+            const reportDateObj = currentReportDate || new Date();
+            const year = reportDateObj.getFullYear();
+            const month = reportDateObj.getMonth() + 1;
+            const day = reportDateObj.getDate();
             
             // 獲取當前區域
             const currentRegion = document.querySelector('.region-btn.active').dataset.region;
@@ -1962,8 +1959,8 @@
             // 構建CSV內容
             let csvContent = '\uFEFF'; // UTF-8 BOM for Excel
             
-            // 添加標題行：累計至昨日和剩餘天數
-            csvContent += `累計至昨日 ${month}/${day}   本月剩餘天數：${fiscalInfo.remainingDays}天\n`;
+            // 添加標題行：累計至報表日期和剩餘天數
+            csvContent += `累計至 ${month}/${day}   本月剩餘天數：${fiscalInfo.remainingDays}天\n`;
             csvContent += '\n'; // 空一行
             
             csvContent += headers.join(',') + '\n';
@@ -2330,7 +2327,7 @@
             const fiscalInfo = calculateFiscalInfo();
             const headerSubtitle = document.getElementById('headerSubtitle');
             if (headerSubtitle) {
-                headerSubtitle.textContent = `FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.today}`;
+                headerSubtitle.textContent = `FY${fiscalInfo.fiscalYear}Q${fiscalInfo.quarter}W${fiscalInfo.week} ${fiscalInfo.currentDate}`;
             }
         });
     </script>
